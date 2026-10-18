@@ -236,7 +236,39 @@ def runtime_python(root,fallback=None):
     return fallback
 
 
+
+def process_image(pid):
+    """Read a Windows process image without following or modifying its environment."""
+    if os.name!='nt':return ''
+    import ctypes
+    from ctypes import wintypes
+    kernel=ctypes.WinDLL('kernel32',use_last_error=True)
+    kernel.OpenProcess.argtypes=[wintypes.DWORD,wintypes.BOOL,wintypes.DWORD]
+    kernel.OpenProcess.restype=wintypes.HANDLE
+    kernel.CloseHandle.argtypes=[wintypes.HANDLE]
+    kernel.QueryFullProcessImageNameW.argtypes=[wintypes.HANDLE,wintypes.DWORD,wintypes.LPWSTR,ctypes.POINTER(wintypes.DWORD)]
+    kernel.QueryFullProcessImageNameW.restype=wintypes.BOOL
+    handle=kernel.OpenProcess(0x1000,False,pid)
+    if not handle:return ''
+    try:
+        size=wintypes.DWORD(32768);buffer=ctypes.create_unicode_buffer(size.value)
+        return buffer.value if kernel.QueryFullProcessImageNameW(handle,0,buffer,ctypes.byref(size)) else ''
+    finally:kernel.CloseHandle(handle)
+
+
+def health_process_id():
+    # Windows venv python.exe can redirect to a child interpreter. Old helpers
+    # compare against the redirector PID returned by Popen, not the child's PID.
+    pid=os.getpid();image=process_image(pid)
+    normalize=lambda path:os.path.normcase(os.path.abspath(path))
+    executable=normalize(sys.executable)
+    if image and normalize(image)!=executable:
+        parent=os.getppid();parent_image=process_image(parent)
+        if parent_image and normalize(parent_image)==executable:return parent
+    return pid
+
+
 def mark_healthy(root):
     token=os.environ.get('FOOTSHORTS_UPDATE_HEALTH_TOKEN','')
     if re.fullmatch(r'[a-f0-9]{32}',token):
-        atomic_json(Path(root)/'.updates'/('health-'+token+'.json'),{'version':local_version(root),'pid':os.getpid()})
+        atomic_json(Path(root)/'.updates'/('health-'+token+'.json'),{'version':local_version(root),'pid':health_process_id(),'app_pid':os.getpid()})

@@ -181,10 +181,14 @@ class App(tk.Tk):
         self.after(100,self.poll)
         self.protocol('WM_DELETE_WINDOW',self.close)
         self.after(0,self.restore_state)
-        self.after(500,lambda:updater.mark_healthy(BASE))
+        self.after_idle(self.confirm_startup)
         self.after(200,self.check_updates)
         self.after(1500,self.cleanup_projects)
         self.after(500,self.refresh_progress)
+
+    def confirm_startup(self):
+        try:updater.mark_healthy(BASE)
+        except Exception as e:self.log('Жаңартудың іске қосылуын растау қатесі: '+str(e))
 
     def arrange_columns(self,width):
         # Use actual requested widths so Windows display scaling cannot clip controls.

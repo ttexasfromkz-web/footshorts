@@ -133,6 +133,75 @@ time.sleep(1)
                 self.assertEqual(updater.local_version(root),'1.5.1')
             finally:
                 for child in children:child.wait(timeout=5)
+
+    def test_health_marker_uses_venv_redirector_pid_for_older_helpers(self):
+        with patch('updater.os.getpid',return_value=222),patch('updater.os.getppid',return_value=111),patch('updater.sys.executable','/venv/Scripts/python.exe'),patch('updater.process_image',side_effect=lambda pid:'/base/python.exe' if pid==222 else '/venv/Scripts/python.exe'):
+            self.assertEqual(updater.health_process_id(),111)
+        with patch('updater.os.getpid',return_value=222),patch('updater.sys.executable','/base/python.exe'),patch('updater.process_image',return_value='/base/python.exe'):
+            self.assertEqual(updater.health_process_id(),222)
+
+    def test_new_helper_accepts_live_child_behind_redirector(self):
+        with tempfile.TemporaryDirectory() as d:
+            root=make_root(d);(root/'.updates').mkdir()
+            token='a'*32;health=root/'.updates'/('health-'+token+'.json')
+            updater.atomic_json(health,{'version':'1.5.1','pid':123456,'app_pid':987654})
+            with patch('updater.process_alive',return_value=True) as alive:
+                update_helper.health_check(root,Dummy(),'1.5.1',token,timeout=.5)
+            alive.assert_called_once_with(987654);self.assertFalse(health.exists())
+
+    def test_wrong_health_version_is_not_accepted(self):
+        with tempfile.TemporaryDirectory() as d:
+            root=make_root(d);(root/'.updates').mkdir()
+            token='b'*32;health=root/'.updates'/('health-'+token+'.json')
+            updater.atomic_json(health,{'version':'1.0.0','pid':123456})
+            with patch('updater.process_alive',return_value=True):
+                with self.assertRaisesRegex(RuntimeError,'1.0.0'):
+                    update_helper.health_check(root,Dummy(),'1.5.1',token,timeout=.01)
+            self.assertFalse(health.exists())
+
+    def test_real_venv_update_survives_legacy_health_check_and_reopen(self):
+        # Exercise the Windows venv redirector used by the actual installed app.
+        with tempfile.TemporaryDirectory() as d:
+            root=make_root(d)
+            env=root/'.updates/test-venv'
+            subprocess.run([sys.executable,'-m','venv','--without-pip',str(env)],check=True,
+                           stdout=subprocess.DEVNULL,stderr=subprocess.PIPE)
+            python=env/('Scripts/python.exe' if os.name=='nt' else 'bin/python')
+            new_app="import time,updater\nfrom pathlib import Path\nupdater.mark_healthy(Path(__file__).parent)\ntime.sleep(3)\n"
+            stage,m=make_stage(root,app=new_app,extra={'updater.py':Path(updater.__file__).read_text(encoding='utf-8')})
+            children=[];observations=[]
+            def starter(*args):
+                child=update_helper.start_app(*args);children.append(child);return child
+            def legacy_checker(root,process,version,token):
+                health=root/'.updates'/('health-'+token+'.json')
+                try:
+                    until=time.monotonic()+10
+                    while time.monotonic()<until:
+                        if process.poll() is not None:raise RuntimeError('venv child exited before confirmation')
+                        if health.is_file():
+                            data=json.loads(health.read_text())
+                            if data.get('version')==version and data.get('pid')==process.pid:
+                                observations.append(data);return
+                        time.sleep(.05)
+                    raise RuntimeError('legacy updater rejected startup')
+                finally:health.unlink(missing_ok=True)
+            try:
+                self.assertTrue(update_helper.apply_update(root,stage,str(python),starter=starter,
+                    checker=legacy_checker,environment=lambda *a:str(python)))
+                print('Windows venv health:',observations,flush=True)
+                for child in children:child.wait(timeout=10)
+                self.assertEqual(updater.local_version(root),'1.5.1')
+                # Closing and starting the installed app again must keep the same version.
+                reopened=update_helper.start_app(root,str(python));children.append(reopened)
+                self.assertEqual(reopened.wait(timeout=10),0)
+                self.assertEqual(updater.local_version(root),'1.5.1')
+                self.assertFalse((root/'.updates/failed.json').exists())
+                for folder in ('output','music','.venv'):
+                    self.assertEqual((root/folder/'keep.txt').read_text(),'user data')
+            finally:
+                for child in children:
+                    if child.poll() is None:child.terminate();child.wait(timeout=5)
+
     def test_single_instance_lock(self):
         with tempfile.TemporaryDirectory() as d:
             lock=Path(d)/'lock'

@@ -47,16 +47,24 @@ def start_app(root,python,token=''):
     finally:log.close()
 
 
-def health_check(root,process,version,token,timeout=40):
+def health_check(root,process,version,token,timeout=90):
     health=root/'.updates'/('health-'+token+'.json');until=time.monotonic()+timeout
+    observed='Растау файлы әлі жоқ.'
     try:
         while time.monotonic()<until:
-            if process.poll() is not None:raise RuntimeError('Жаңа бағдарлама іске қосылмады.')
+            if process.poll() is not None:raise RuntimeError('Жаңа бағдарлама іске қосылмады. .updates/app-start.log файлын тексеріңіз.')
             if health.exists():
-                data=json.loads(health.read_text())
-                if data.get('version')==version and data.get('pid')==process.pid:return
+                try:
+                    data=json.loads(health.read_text(encoding='utf-8'))
+                    app_pid=data.get('app_pid',data.get('pid'))
+                    observed=f"Күтілген нұсқа: {version}; алынғаны: {data.get('version')}; іске қосушы PID: {process.pid}; бағдарлама PID: {app_pid}."
+                    # The unpredictable per-launch token identifies this startup.
+                    # A venv redirector may own Popen.pid while the child runs Tk.
+                    if (data.get('version')==version and type(app_pid) is int and app_pid>0
+                            and updater.process_alive(app_pid)):return
+                except (ValueError,OSError,TypeError):observed='Растау файлын оқу аяқталмады.'
             time.sleep(.2)
-        raise RuntimeError('Жаңа нұсқаның іске қосылуы расталмады.')
+        raise RuntimeError('Жаңа нұсқаның іске қосылуы расталмады. '+observed+' .updates/app-start.log файлын тексеріңіз.')
     finally:health.unlink(missing_ok=True)
 
 
