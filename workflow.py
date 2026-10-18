@@ -126,6 +126,7 @@ def render_project(project,log=print,cancel=None):
     if not source.is_file():raise FileNotFoundError('Жобаның бастапқы видеосы табылмады: '+str(source))
     if music and not music.is_file():raise FileNotFoundError('Жобаның музыкасы табылмады: '+str(music))
     project['status']='rendering';save_project(project)
+    log('@progress:'+('logos' if settings['intro'] else 'render')+':0:Монтажға дайындалуда')
     log('Монтаж және YouTube TXT дайындау…')
     folder=Path(project['directory'])
     try:
@@ -137,6 +138,7 @@ def render_project(project,log=print,cancel=None):
                 crop_top=settings['crop_top'],replays=settings['replays'],replay_speed=settings['replay_speed'],
                 max_seconds=settings['target'],action_camera=settings['action_camera'],intro=settings['intro'],
                 logo_dir=folder/'source/logos',log=log,cancel=cancel)
+            log('@progress:save:0.8:YouTube мәтіні мен видеоны сақтау')
             text.write_text(project_text(project),encoding='utf-8-sig')
             if cancel and cancel.is_set():raise core.Cancelled()
             return commit_outputs(project,video,text)
@@ -156,6 +158,8 @@ def create_project(base,url='',local_video='',music='',settings=None,title_hint=
            title=title_hint or 'Матч',source_url=url,source_file='source/original.mp4',
            music_file='',score=None,clips=[],settings=settings,revision=0,warnings=[])
     save_project(p)
+    log('@progress:reset')
+    log('@progress:download:0:Бастапқы видеоны дайындау')
     log('Жоба: '+str(folder))
     try:
         if cancel and cancel.is_set():raise core.Cancelled()
@@ -182,9 +186,12 @@ def create_project(base,url='',local_video='',music='',settings=None,title_hint=
         if on_source:
             on_source(dict(title=p['title'],directory=p['directory'],
                            video=str(media_path(p,p['source_file']))))
+        log('@progress:download:1:Бастапқы видео дайын')
+        log('@progress:analyze:0:Есеп пен қызықты сәттерді анықтау')
         p['status']='analyzing';save_project(p)
         analysis=core.analyze(str(media_path(p,p['source_file'])),max(4,settings['target']-(3 if settings['intro'] else 0)),tuple(settings['roi']),
                               settings['use_ocr'],log,cancel)
+        log('@progress:analyze:1:Талдау аяқталды')
         p['analysis']=analysis;p['clips']=analysis['clips'];p['warnings']=analysis.get('warnings',[])
         p['score']=analysis.get('score') or p.get('title_score')
         p['score_source']='video' if analysis.get('score') else ('title' if p.get('title_score') else 'unknown')

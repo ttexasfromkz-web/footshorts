@@ -158,3 +158,6 @@ Windows 11 / Python 3.11 үшін іске қосқыш берілді, біра
 Windows CI-де 64 тест өтті (Python 3.11). Жергілікті орындау ортасы байланыстан ажырағандықтан,
 осы өзгерістердің тексерістері Windows runner ішінде орындалды. Нақты YouTube желілік жүктеуі
 жаңа кезек сынағында қайталанған жоқ; жүктеу қолданыстағы downloader арқылы жүреді.
+
+
+1.9.0 checks: startup discovery after updater restart, visible check status, network error event, opt-in retention, whole-project expiration, active/unfinished/fresh/linked directory exclusion, recently touched media, measured progress and stage ETA. Windows integration and media exports remain in the release test suite.

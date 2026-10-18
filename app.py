@@ -15,6 +15,8 @@ import downloader
 import publishing
 import workflow
 import updater
+import retention
+from progress import Progress
 from timeline import plan_timeline
 
 BASE=Path(__file__).resolve().parent
@@ -50,6 +52,11 @@ class App(tk.Tk):
         self.crop=tk.StringVar(value='15');self.roi=tk.StringVar(value='0, 0, 50, 17')
         self.use_ocr=tk.BooleanVar(value=True);self.score_verified=tk.BooleanVar(value=False)
         self.recent=tk.StringVar();self.project_paths=[]
+        self.progress_model=Progress();self.progress_model.running=False
+        self.progress_value=tk.DoubleVar(value=0);self.progress_text=tk.StringVar(value='Жүктеу → Талдау → Логотип іздеу → Монтаж → Сақтау')
+        self.progress_detail=tk.StringVar();self.update_status=tk.StringVar(value='Жаңарту: тексеру күтілуде…')
+        days=retention.load_days(BASE)
+        self.retention_choice=tk.StringVar(value=next(k for k,v in retention.CHOICES.items() if v==days))
         self.status=tk.StringVar(value='Видеоны таңдаңыз → Талдау → Үзінділерді тексеру → MP4 сақтау')
         outer=ttk.Frame(self);outer.pack(fill='both',expand=True)
         canvas=tk.Canvas(outer,highlightthickness=0)
@@ -73,6 +80,16 @@ class App(tk.Tk):
         ttk.Button(projects,text='Нәтижені көру',command=self.open_result).pack(side='left',padx=5)
         ttk.Button(projects,text='Жаңа жоба',command=self.new_project).pack(side='left')
         ttk.Button(projects,text='Жаңартуды тексеру',command=lambda:self.check_updates(True)).pack(side='left',padx=5)
+        ttk.Label(frame,textvariable=self.update_status,foreground='#246090').pack(anchor='w')
+        storage=ttk.Frame(frame);storage.pack(fill='x',pady=4)
+        ttk.Label(storage,text='Жобаларды сақтау:').pack(side='left')
+        storage_choice=ttk.Combobox(storage,textvariable=self.retention_choice,values=list(retention.CHOICES),state='readonly',width=14)
+        storage_choice.pack(side='left',padx=6);storage_choice.bind('<<ComboboxSelected>>',self.change_retention)
+        ttk.Label(storage,text='Мерзімі өткен жоба source, MP4 және TXT файлдарымен бірге өшіріледі.').pack(side='left')
+        ttk.Label(frame,text='Жүктеу → Талдау → Логотип іздеу → Монтаж → Сақтау').pack(anchor='w',pady=(5,0))
+        ttk.Progressbar(frame,variable=self.progress_value,maximum=100).pack(fill='x')
+        ttk.Label(frame,textvariable=self.progress_text).pack(anchor='w')
+        ttk.Label(frame,textvariable=self.progress_detail,wraplength=900).pack(anchor='w')
         for label,var,kind in [('Футбол видеосы',self.video,'video'),('Фондық музыка',self.music,'music')]:
             row=ttk.Frame(frame);row.pack(fill='x',pady=3)
             ttk.Label(row,text=label,width=19).pack(side='left')
@@ -127,6 +144,36 @@ class App(tk.Tk):
         self.after(0,self.restore_state)
         self.after(500,lambda:updater.mark_healthy(BASE))
         self.after(200,self.check_updates)
+        self.after(1500,self.cleanup_projects)
+        self.after(500,self.refresh_progress)
+
+    def refresh_progress(self):
+        if self.progress_model.running:
+            state=self.progress_model.snapshot()
+            self.progress_value.set(state['percent']);self.progress_text.set(state['text']);self.progress_detail.set(state['detail'])
+        self.after(500,self.refresh_progress)
+
+    def change_retention(self,event=None):
+        days=retention.CHOICES[self.retention_choice.get()]
+        if days and not messagebox.askyesno('Ескі жобаларды автоматты өшіру',
+            f'{days} күн қолданылмаған жобалар бастапқы видео, MP4 және TXT файлдарымен бірге өшіріледі.\nОсы мерзімді қосайын ба?',parent=self):
+            old=retention.load_days(BASE)
+            self.retention_choice.set(next(k for k,v in retention.CHOICES.items() if v==old));return
+        try:retention.save_days(BASE,days)
+        except Exception as e:messagebox.showerror('Сақтау мерзімі',str(e),parent=self);return
+        self.log('Жобаларды сақтау: '+self.retention_choice.get())
+        self.after(0,lambda:self.cleanup_projects(reschedule=False))
+
+    def cleanup_projects(self,reschedule=True):
+        # Never delete while an editor, worker or update is active.
+        if not (self.busy or self.review_open or self.update_installing):
+            try:
+                removed,errors=retention.cleanup(BASE,retention.load_days(BASE),protected=[self.project_dir])
+                for name in removed:self.log('Мерзімі өткен жоба өшірілді: '+name)
+                for error in errors:self.log('Жоба тазаланбады: '+error)
+                if removed:self.refresh_projects()
+            except Exception as e:self.log('Жобаларды тазалау: '+str(e))
+        if reschedule:self.after(3600000,self.cleanup_projects)
 
     def save_state(self):
         state=dict(project=self.project_dir,youtube=self.youtube.get(),video=self.video.get(),music=self.music.get(),
@@ -154,6 +201,7 @@ class App(tk.Tk):
     def check_updates(self,force=False):
         if self.update_checking or self.pending_update or self.update_installing:return
         self.update_checking=True
+        self.update_status.set('Жаңарту тексерілуде… Қазіргі нұсқа: '+updater.local_version(BASE))
         def worker():
             try:
                 release=updater.find_update(BASE,force)
@@ -163,6 +211,7 @@ class App(tk.Tk):
 
     def offer_update(self,release):
         version=release['tag_name'].removeprefix('v')
+        if hasattr(self,'update_status'):self.update_status.set('Жаңа нұсқа бар: '+version)
         message=('Жаңа нұсқа шықты: '+version+'\nҚазіргі нұсқа: '+updater.local_version(BASE)+
                  '\n\nЖаңартайын ба?\n\n«Жоқ» таңдасаңыз, осы нұсқамен жұмысты жалғастырасыз.')
         if self.busy:message+='\nЖаңарту ағымдағы жұмыс аяқталған соң орнатылады.'
@@ -170,6 +219,7 @@ class App(tk.Tk):
             self.log('Жаңарту кейінге қалдырылды: '+version)
             return
         self.update_checking=True
+        if hasattr(self,'update_status'):self.update_status.set('Жаңарту жүктелуде: '+version)
         self.log('Жаңарту мақұлданды: '+version+'. Жүктелуде…')
         def worker():
             try:self.jobs.put(('update_ready',updater.download_update(BASE,release,self.log)))
@@ -308,11 +358,16 @@ class App(tk.Tk):
                 self.youtube.set('');self.recent.set('');self.editor.delete('1.0','end')
                 self.title_text.set('')
 
+    def refresh_progress_values(self):
+        state=self.progress_model.snapshot()
+        self.progress_value.set(state['percent']);self.progress_text.set(state['text']);self.progress_detail.set(state['detail'])
+
     def log(self,s):self.jobs.put(('log',str(s)))
 
     def start(self,fn,callback):
         if self.busy:return
         self.busy=True;self.cancel_event.clear()
+        self.progress_model.reset();self.refresh_progress_values()
         self.analyze_btn.state(['disabled']);self.export_btn.state(['disabled']);self.download_btn.state(['disabled'])
         self.status.set('Жұмыс жүріп жатыр…')
         def worker():
@@ -330,10 +385,14 @@ class App(tk.Tk):
                     if kind=='update_available':
                         self.offer_update(payload)
                     elif kind=='update_ready':
+                        self.update_status.set('Жаңарту дайын. Орнату үшін жұмыстың аяқталуын күтуде…')
                         self.pending_update=payload
                         self.status.set('Жаңа нұсқа дайын. Жұмыс аяқталған соң жаңарып, бағдарлама қайта ашылады.')
-                    elif kind=='update_error':self.log('Жаңартуды тексеру мүмкін болмады; ағымдағы нұсқа жұмыс істейді: '+payload)
+                    elif kind=='update_error':
+                        self.update_status.set('Жаңарту тексерілмеді — «Жаңартуды тексеру» басып қайталаңыз.')
+                        self.log('Жаңартуды тексеру мүмкін болмады; ағымдағы нұсқа жұмыс істейді: '+payload)
                     else:
+                        self.update_status.set('Соңғы жарияланған нұсқа орнатылған: '+updater.local_version(BASE))
                         self.log('Жаңартуды тексеру аяқталды; жаңа нұсқа жоқ.')
                         if payload:messagebox.showinfo('Жаңарту','Сізде соңғы нұсқа орнатылған: '+updater.local_version(BASE),parent=self)
                     continue
@@ -348,8 +407,11 @@ class App(tk.Tk):
                     self.refresh_projects();self.recent.set(Path(self.project_dir).name)
                     continue
                 if kind=='log':
+                    if self.busy and self.progress_model.observe(payload):continue
                     self.logs.configure(state='normal');self.logs.insert('end',payload+'\n');self.logs.see('end');self.logs.configure(state='disabled')
                 else:
+                    self.progress_model.finish(kind=='done');self.refresh_progress_values()
+                    if kind!='done':self.progress_text.set('Тоқтатылды' if kind=='cancel' else 'Қате — журналды қараңыз')
                     self.busy=False;self.refresh_projects();self.analyze_btn.state(['!disabled']);self.export_btn.state(['!disabled']);self.download_btn.state(['!disabled'])
                     if kind=='done':
                         cb,result=payload;self.status.set('Дайын')

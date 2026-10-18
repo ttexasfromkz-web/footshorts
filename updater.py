@@ -120,7 +120,6 @@ def validate_archive(path,manifest):
 
 def find_update(root,force=False):
     root=Path(root).resolve()
-    if os.environ.get('FOOTSHORTS_SKIP_UPDATE')=='1' and not force:return None
     current=local_version(root)
     try:release=json.loads(fetch(API,1024*1024))
     except HTTPError as e:
@@ -133,10 +132,10 @@ def find_update(root,force=False):
     if failed.is_file() and not force:
         try:
             failure=json.loads(failed.read_text())
-            if failure.get('version')==tag[1:] and time.time()-failure.get('time',0)<86400:return None
+            if failure.get('version')==tag[1:] and time.time()-failure.get('time',0)<86400:raise RuntimeError('Соңғы жаңарту сәтсіз орнатылған. Қолмен тексеріп қайта көріңіз.')
         except (ValueError,TypeError):pass
     assets={a['name']:a for a in release.get('assets',[]) if isinstance(a,dict) and 'name' in a}
-    if 'update.json' not in assets or ASSET not in assets:return None
+    if 'update.json' not in assets or ASSET not in assets:raise RuntimeError('Жаңа нұсқаның файлдары әлі дайын емес. Кейінірек тексеріңіз.')
     return release
 
 
