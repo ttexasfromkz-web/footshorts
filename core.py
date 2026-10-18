@@ -21,10 +21,24 @@ def ffmpeg():
     import imageio_ffmpeg
     return imageio_ffmpeg.get_ffmpeg_exe()
 
-def run(args, cancel=None):
-    """Drain stderr to a file, so long renders cannot deadlock on pipe buffers."""
-    with tempfile.TemporaryFile() as err:
-        p = subprocess.Popen([str(a) for a in args], stdin=subprocess.DEVNULL, stdout=subprocess.DEVNULL,
+def read_progress(path,duration):
+    try:
+        with open(path,'rb') as f:
+            f.seek(0,2);size=f.tell();f.seek(max(0,size-4096))
+            values=re.findall(rb'(?:^|\n)out_time_us=(-?\d+)\r?\n',f.read())
+        if values and duration>0:return max(0.,min(.999,int(values[-1])/(duration*1000000)))
+    except (OSError,ValueError):pass
+    return None
+
+
+def run(args, cancel=None, progress=None, duration=None):
+    """Drain stderr to disk and read FFmpeg's measured media-time progress."""
+    with tempfile.TemporaryFile() as err,tempfile.TemporaryDirectory(prefix='football-progress-') as tmp:
+        path=Path(tmp)/'progress.txt'
+        command=[str(a) for a in args]
+        if progress is not None and duration:
+            command=command[:1]+['-progress',str(path),'-nostats']+command[1:]
+        p = subprocess.Popen(command, stdin=subprocess.DEVNULL, stdout=subprocess.DEVNULL,
                              stderr=err, creationflags=CREATE_NO_WINDOW)
         try:
             while True:
@@ -35,6 +49,9 @@ def run(args, cancel=None):
                     if cancel and cancel.is_set():
                         p.terminate()
                         raise Cancelled('Тоқтатылды')
+                    if progress is not None and duration:
+                        fraction=read_progress(path,duration)
+                        if fraction is not None:progress(fraction)
         finally:
             if p.poll() is None:
                 p.kill()
@@ -42,6 +59,8 @@ def run(args, cancel=None):
         if code:
             err.seek(0)
             raise RuntimeError(err.read().decode('utf-8', 'replace')[-3000:])
+        if progress is not None:progress(1.)
+
 
 def metadata(video):
     import cv2
@@ -362,7 +381,8 @@ def render(video,music,clips,output,title='',score='',music_level=.18,source_lev
             args+=['-filter_complex_threads','2','-filter_complex',vf+';'+af,'-map','[v]','-map','[a]',
                    '-t',out_duration,'-c:v','libx264','-preset','fast','-crf','21','-threads','2',
                    '-c:a','aac','-ar','48000','-ac','2','-y',part]
-            run(args,cancel)
+            report=lambda fraction:log(f'@progress:render:{(i+fraction)/max(1,len(clips))}:Үзінді {i+1}/{len(clips)}')
+            run(args,cancel,progress=report,duration=out_duration)
             # A process can exit successfully after writing incomplete media.
             # Validate each container before concatenating it.
             try:
@@ -399,12 +419,13 @@ def render(video,music,clips,output,title='',score='',music_level=.18,source_lev
         else:
             args+=['-map','0:v','-map','0:a','-c','copy']
         args+=['-t',min(total,179.9),'-movflags','+faststart','-y',mixed]
-        run(args,cancel)
+        run(args,cancel,progress=lambda fraction:log(f'@progress:save:{fraction*.5}:Музыка және видео'),duration=total)
         log('@progress:save:0.5:Дайын видеоны толық тексеру')
         result_info=metadata(mixed)
         if abs(result_info['duration']-total)>.6:
             raise RuntimeError('Экспорт толық аяқталмады. Файл сақталмады, қайталап көріңіз.')
-        run([ffmpeg(),'-v','error','-i',mixed,'-f','null','-'],cancel)
+        run([ffmpeg(),'-v','error','-i',mixed,'-f','null','-'],cancel,
+            progress=lambda fraction:log(f'@progress:save:{.5+fraction*.25}:Видеоны тексеру'),duration=total)
         # Complete the file first; cancelled / failed exports cannot replace a good output.
         os.replace(mixed,output)
     return str(output)

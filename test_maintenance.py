@@ -8,6 +8,7 @@ import time
 import unittest
 from unittest.mock import Mock,patch
 import app
+import core
 from progress import Progress
 import retention
 import updater
@@ -84,6 +85,18 @@ class MaintenanceTests(unittest.TestCase):
         p.observe('@progress:render:0.5:2/4');now[0]=35
         self.assertIn('00:10',p.snapshot()['text'])
         p.finish(True);self.assertEqual(p.snapshot()['percent'],100)
+
+    def test_ffmpeg_progress_reads_microseconds_and_bounds(self):
+        with tempfile.TemporaryDirectory() as d:
+            p=Path(d,'progress.txt')
+            p.write_bytes(b'frame=1\nout_time_us=2500000\nprogress=continue\n')
+            self.assertEqual(core.read_progress(p,10),.25)
+            p.write_bytes(b'out_time_us=-20\n')
+            self.assertEqual(core.read_progress(p,10),0)
+            p.write_bytes(b'out_time_us=20000000\n')
+            self.assertEqual(core.read_progress(p,10),.999)
+            p.write_bytes(b'out_time_us=N/A\n')
+            self.assertIsNone(core.read_progress(p,10))
 
     def test_update_check_runs_even_after_updater_restart(self):
         release={'tag_name':'v9.0.0','assets':[{'name':updater.ASSET},{'name':'update.json'}]}
