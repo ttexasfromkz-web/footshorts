@@ -165,7 +165,10 @@ def create_project(base,url='',local_video='',music='',settings=None,title_hint=
         if cancel and cancel.is_set():raise core.Cancelled()
         if url:
             p['status']='downloading';save_project(p)
-            result=downloader.download(url,source,settings.get('quality',1080),log,cancel)
+            auth={}
+            if settings.get('youtube_browser'):auth['browser']=settings['youtube_browser']
+            if settings.get('youtube_cookie_file'):auth['cookie_file']=settings['youtube_cookie_file']
+            result=downloader.download(url,source,settings.get('quality',1080),log,cancel,**auth)
             original=Path(result['path']);raw_title=result.get('title','')
         else:
             log('Бастапқы видеоны жобаға көшіру…')

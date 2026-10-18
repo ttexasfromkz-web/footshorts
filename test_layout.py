@@ -15,6 +15,12 @@ class CompactLayoutTests(unittest.TestCase):
             ui=app.App()
             try:
                 ui.geometry('1600x900');ui.update()
+                self.assertEqual(ui.youtube_login.get(),'Аккаунтсыз')
+                ui.youtube_login.set('Chrome')
+                self.assertEqual(ui.settings()['youtube_browser'],'chrome')
+                self.assertEqual(ui.settings()['youtube_cookie_file'],'')
+                ui.youtube_login.set('Аккаунтсыз')
+                self.assertEqual(ui.settings()['youtube_browser'],'')
                 self.assertFalse(ui.action_camera.get())
                 ui.zoom_btn.invoke();self.assertTrue(ui.settings()['action_camera'])
                 ui.no_zoom_btn.invoke();self.assertFalse(ui.settings()['action_camera'])

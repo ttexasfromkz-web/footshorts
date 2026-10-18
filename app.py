@@ -45,6 +45,8 @@ class App(tk.Tk):
         self.video=tk.StringVar();self.music=tk.StringVar(value=str(BASE/('music/Stadium_Ignition.mp3' if (BASE/'music/Stadium_Ignition.mp3').is_file() else 'music/Stadium_Ignition.wav')))
         self.title_text=tk.StringVar(value='')
         self.youtube=tk.StringVar();self.quality=tk.StringVar(value='1080')
+        self.youtube_login=tk.StringVar(value='Аккаунтсыз');self.youtube_cookie_file=tk.StringVar()
+        self.cookie_label=tk.StringVar(value='Cookies файлы таңдалмаған')
         self.intro=tk.BooleanVar(value=True)
         self.action_camera=tk.BooleanVar(value=False)
         self.replays=tk.BooleanVar(value=True);self.replay_speed=tk.StringVar(value='0.5')
@@ -80,6 +82,11 @@ class App(tk.Tk):
         ttk.Entry(yt,textvariable=self.youtube).pack(side='left',fill='x',expand=True)
         ttk.Combobox(yt,textvariable=self.quality,values=['720','1080'],width=5,state='readonly').pack(side='left',padx=5)
         self.download_btn=ttk.Button(yt,text='ШОРТС ЖАСАУ',command=self.download);self.download_btn.pack(side='left')
+        auth=ttk.Frame(frame);auth.pack(fill='x',pady=(0,3))
+        ttk.Label(auth,text='YouTube кіруі:').pack(side='left')
+        ttk.Combobox(auth,textvariable=self.youtube_login,values=['Аккаунтсыз','Chrome','Cookies файлы'],width=16,state='readonly').pack(side='left',padx=6)
+        ttk.Button(auth,text='Cookies файлын таңдау…',command=self.pick_cookie_file).pack(side='left')
+        ttk.Label(auth,textvariable=self.cookie_label).pack(side='left',padx=6)
         ttk.Button(frame,text='Видеолар кезегі: сілтемелер және файлдар',command=self.open_batch).pack(anchor='w',pady=(0,4))
         projects=ttk.Frame(frame);projects.pack(fill='x',pady=2)
         ttk.Label(projects,text='Жобалар:').pack(side='left')
@@ -237,6 +244,9 @@ class App(tk.Tk):
                 if key in state:var.set(state[key])
             if 'editor' in state:self.editor.delete('1.0','end');self.editor.insert('1.0',state['editor'])
             self.target.set(str(settings.get('target',180)));self.quality.set(str(settings.get('quality',1080)))
+            self.youtube_cookie_file.set(settings.get('youtube_cookie_file',''))
+            self.youtube_login.set('Chrome' if settings.get('youtube_browser')=='chrome' else 'Cookies файлы' if settings.get('youtube_cookie_file') else 'Аккаунтсыз')
+            if self.youtube_cookie_file.get():self.cookie_label.set(Path(self.youtube_cookie_file.get()).name)
             self.music_volume.set(round(settings.get('music_level',.18)*100));self.source_volume.set(round(settings.get('source_level',.2)*100))
             self.crop.set(str(settings.get('crop_top',.15)*100));self.roi.set(', '.join(str(v*100) for v in settings.get('roi',[0,0,.5,.17])))
             self.intro.set(settings.get('intro',True))
@@ -285,13 +295,24 @@ class App(tk.Tk):
             self.pending_update=None;self.update_installing=False
             return False
 
+    def pick_cookie_file(self):
+        path=filedialog.askopenfilename(title='YouTube cookies.txt (тек осы компьютерде)',
+            filetypes=[('Cookies мәтіні','*.txt'),('Барлық файлдар','*.*')])
+        if not path:return
+        try:downloader.authentication_args(cookie_file=path)
+        except ValueError as e:messagebox.showerror('Cookies файлы',str(e),parent=self);return
+        self.youtube_cookie_file.set(path);self.cookie_label.set(Path(path).name);self.youtube_login.set('Cookies файлы')
+
     def settings(self):
         roi=tuple(float(x.strip())/100 for x in self.roi.get().split(','))
         if len(roi)!=4 or any(v<0 for v in roi) or roi[2]<=0 or roi[3]<=0 or roi[0]+roi[2]>1 or roi[1]+roi[3]>1:
             raise ValueError('Есеп аймағы: 0, 0, 50, 17 сияқты пайызбен жазыңыз.')
         mv=float(self.music_volume.get())/100;sv=float(self.source_volume.get())/100;crop=float(self.crop.get())/100
         if not 0<=mv<=1 or not 0<=sv<=1 or not 0<=crop<=.35:raise ValueError('Дыбыс: 0–100%, қию: 0–35%.')
-        return dict(target=int(self.target.get()),quality=int(self.quality.get()),roi=roi,use_ocr=self.use_ocr.get(),
+        cookie_file=self.youtube_cookie_file.get() if self.youtube_login.get()=='Cookies файлы' else ''
+        if self.youtube_login.get()=='Cookies файлы' and not cookie_file:raise ValueError('Cookies файлын таңдаңыз.')
+        return dict(youtube_browser='chrome' if self.youtube_login.get()=='Chrome' else '',youtube_cookie_file=cookie_file,
+                    target=int(self.target.get()),quality=int(self.quality.get()),roi=roi,use_ocr=self.use_ocr.get(),
                     music_level=mv,source_level=sv,crop_top=crop,replays=self.replays.get(),replay_speed=float(self.replay_speed.get()),action_camera=self.action_camera.get(),intro=self.intro.get())
 
     def refresh_projects(self):

@@ -1,4 +1,4 @@
-"""One public YouTube video -> a local file. No cookies or account access."""
+"""YouTube downloads with explicitly selected local Chrome or cookie-file login."""
 from pathlib import Path
 from urllib.parse import urlparse,parse_qs
 import os
@@ -57,7 +57,39 @@ def runtime_args():
     return []
 
 
-def build_command(url,workdir,height=1080):
+def authentication_args(browser='',cookie_file=''):
+    if browser not in ('','chrome'):raise ValueError('Кіру үшін Chrome немесе cookies файлын таңдаңыз.')
+    if browser and cookie_file:raise ValueError('Chrome және cookies файлын бірге таңдамаңыз.')
+    if browser:return ['--cookies-from-browser',browser]
+    if cookie_file:
+        path=Path(cookie_file).expanduser().resolve()
+        if not path.is_file():raise ValueError('Cookies файлы табылмады. Қайта таңдаңыз.')
+        with path.open('rb') as handle:header=handle.readline(256).strip()
+        if header not in (b'# Netscape HTTP Cookie File',b'# HTTP Cookie File'):
+            raise ValueError('Cookies файлы Netscape cookies.txt форматында болуы керек.')
+        return ['--cookies',str(path)]
+    return []
+
+
+def download_error(lines):
+    details='\n'.join(lines)[-1800:]
+    lower=details.lower()
+    if 'decrypt' in lower or 'dpapi' in lower or 'app-bound' in lower:
+        return ('Chrome сессиясын Windows шифрлауына байланысты оқу мүмкін болмады. '
+                '«Cookies файлы» режимін қолданыңыз немесе видео файлын таңдаңыз. '
+                'Chrome қауіпсіздік баптауларын өшіру қажет емес.')
+    if 'cookie database' in lower or ('cookies' in lower and 'permission denied' in lower):
+        return ('Chrome cookies дерекқоры бос емес немесе қолжетімсіз. Chrome терезелерін толық жауып, қайта көріңіз. '
+                'Көмектеспесе «Cookies файлы» режимін немесе жергілікті видеоны қолданыңыз.')
+    if 'sign in' in lower or 'not a bot' in lower:
+        return ('YouTube кіруді немесе бот емес екеніңізді растауды сұрады. '
+                'Chrome-да осы видеоны ашып, аккаунтқа кіріңіз; бағдарламадағы «YouTube кіруі» бөлімінен Chrome таңдаңыз. '
+                'Chrome режимі көмектеспесе, «Cookies файлы» немесе жергілікті видео қолданыңыз. '
+                'Кіру сессиясы жүктеуге кепілдік бермейді.')
+    return 'YouTube видеосы жүктелмеді. Сілтемені және интернетті тексеріңіз.\n\n'+details
+
+
+def build_command(url,workdir,height=1080,browser='',cookie_file=''):
     if int(height) not in (720,1080):raise ValueError('Сапа: 720 немесе 1080.')
     fmt=(f'bv[ext=mp4][vcodec^=avc1][height<={height}]+ba[ext=m4a]/'
          f'b[ext=mp4][height<={height}]/bv[height<={height}]+ba/b[height<={height}]')
@@ -67,7 +99,7 @@ def build_command(url,workdir,height=1080):
             '--socket-timeout','20','--retries','2','--fragment-retries','2',
             '--match-filter','!is_live & duration < 14400','--windows-filenames',
             '--ffmpeg-location',str(ffmpeg_directory()),'-f',fmt,'--merge-output-format','mp4',
-            '-o',str(Path(workdir)/'video.%(ext)s'),*runtime_args(),'--',url]
+            '-o',str(Path(workdir)/'video.%(ext)s'),*runtime_args(),*authentication_args(browser,cookie_file),'--',url]
 
 
 def stop_process(p):
@@ -83,13 +115,19 @@ def stop_process(p):
     except subprocess.TimeoutExpired:p.kill();p.wait()
 
 
-def download(url,directory,height=1080,log=print,cancel=None):
+def download(url,directory,height=1080,log=print,cancel=None,browser='',cookie_file=''):
     url=normalize_url(url)
     if cancel and cancel.is_set():raise core.Cancelled()
     dest=Path(directory).resolve();dest.mkdir(parents=True,exist_ok=True)
     with tempfile.TemporaryDirectory(prefix='youtube-',dir=dest) as tmp:
         tmp=Path(tmp)
-        command=build_command(url,tmp,height)
+        # Never modify the user's cookie file; yt-dlp updates only this private temporary copy.
+        authentication_args(browser,cookie_file)
+        if cookie_file:
+            private_cookie=tmp/'session-cookies.txt';shutil.copyfile(cookie_file,private_cookie)
+            cookie_file=str(private_cookie)
+        command=(build_command(url,tmp,height,browser=browser,cookie_file=cookie_file)
+                 if browser or cookie_file else build_command(url,tmp,height))
         log('YouTube видеосын жүктеу…')
         p=subprocess.Popen(command,stdin=subprocess.DEVNULL,stdout=subprocess.PIPE,stderr=subprocess.STDOUT,
                            encoding='utf-8',errors='replace',bufsize=1,
@@ -118,8 +156,7 @@ def download(url,directory,height=1080,log=print,cancel=None):
             code=p.wait()
             if cancel and cancel.is_set():raise core.Cancelled()
             if code:
-                raise RuntimeError('YouTube видеосы жүктелмеді. Сілтемені және интернетті тексеріңіз. '
-                    'YouTube кіруді талап етсе немесе шектеу қойса, видео файлын қолмен таңдаңыз.\n\n'+ '\n'.join(errors)[-1800:])
+                raise RuntimeError(download_error(errors))
             if not filepath or filepath.parent!=tmp.resolve() or not filepath.is_file():
                 raise RuntimeError('Жүктелген видео табылмады. Тікелей эфир, плейлист немесе 4 сағаттан ұзақ видео қабылданбайды.')
             # Some fallback formats cannot be opened by OpenCV on Windows.
