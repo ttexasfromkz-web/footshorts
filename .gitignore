@@ -1,0 +1,8 @@
+.venv/
+.updates/
+output/
+ui_state.json
+__pycache__/
+*.pyc
+dist/
+*.log

@@ -1,0 +1,37 @@
+name: Test and release Windows update
+on:
+  push:
+    branches: [main]
+    paths: [version.json]
+    tags: ['v*']
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  release:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-python@v7
+        with:
+          python-version: '3.11'
+          cache: pip
+      - name: Install dependencies
+        run: python -m pip install -r requirements.txt
+      - name: Test
+        run: python -m unittest discover -p "test_*.py" -v
+      - name: Validate version and build
+        shell: pwsh
+        run: |
+          $version = (Get-Content version.json | ConvertFrom-Json).version
+          if ($env:GITHUB_REF_TYPE -eq 'tag' -and $env:GITHUB_REF_NAME -ne "v$version") {
+            throw 'Tag and version.json must match'
+          }
+          python scripts/build_release.py
+      - name: Publish release
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          $version = (Get-Content version.json | ConvertFrom-Json).version
+          gh release create "v$version" dist/FootballShorts-Windows.zip dist/FootballShorts-update.zip dist/update.json --title "Football Shorts $version" --generate-notes --target "$env:GITHUB_SHA"

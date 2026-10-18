@@ -1,0 +1,7 @@
+numpy>=1.24,<3
+opencv-python>=4.8,<5
+rapidocr-onnxruntime==1.4.4
+imageio-ffmpeg==0.6.0
+Pillow>=10,<13
+yt-dlp[default]
+deno>=2.3,<3
