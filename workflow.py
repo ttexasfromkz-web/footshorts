@@ -12,7 +12,7 @@ import downloader
 import publishing
 
 DEFAULTS=dict(target=180,roi=[0,0,.5,.17],use_ocr=True,music_level=.18,
-              source_level=.2,crop_top=.15,replays=True,replay_speed=.5)
+              source_level=.2,crop_top=.15,replays=True,replay_speed=.5,action_camera=True)
 
 
 def save_project(project):
@@ -126,7 +126,7 @@ def render_project(project,log=print,cancel=None):
                 title=project['title'],score=project.get('score') or '?',
                 music_level=settings['music_level'],source_level=settings['source_level'],
                 crop_top=settings['crop_top'],replays=settings['replays'],replay_speed=settings['replay_speed'],
-                max_seconds=settings['target'],log=log,cancel=cancel)
+                max_seconds=settings['target'],action_camera=settings['action_camera'],log=log,cancel=cancel)
             text.write_text(project_text(project),encoding='utf-8-sig')
             if cancel and cancel.is_set():raise core.Cancelled()
             return commit_outputs(project,video,text)

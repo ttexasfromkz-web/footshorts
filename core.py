@@ -255,43 +255,16 @@ def validate_clips(clips,duration):
     return total
 
 def make_card(path, title, score, label, final_card=False):
-    from PIL import Image, ImageDraw, ImageFont
-    fonts=[Path(os.environ.get('WINDIR','C:/Windows'))/'Fonts/arialbd.ttf',
-           Path('/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf')]
-    fontpath=next((f for f in fonts if f.exists()),None)
-    def font(size):
-        return ImageFont.truetype(str(fontpath),size) if fontpath else ImageFont.load_default()
-    im=Image.new('RGBA',(720,1280));d=ImageDraw.Draw(im)
-    def text(s,y,size,color='white'):
-        f=font(size)
-        while d.textbbox((0,0),s,font=f)[2]>670 and size>14:
-            size-=1;f=font(size)
-        box=d.textbbox((0,0),s,font=f)
-        d.text(((720-box[2])/2,y),s,font=f,fill=color)
-    d.rounded_rectangle((275,276,445,282),3,fill='#66eed2')
-    text(title or 'FOOTBALL HIGHLIGHTS',310,36)
-    if final_card:
-        text('FINAL SCORE' if score!='?' else 'ЕСЕП АНЫҚТАЛМАДЫ',388,21,'#66eed2')
-        text(score,458,140)
-        text(title,705,30)
-    else:
-        text(label,891,24,'#66eed2')
-    im.save(path)
+    from visuals import card
+    card(path,title,score,label,final_card)
 
 def make_goal_image(path):
-    from PIL import Image,ImageDraw,ImageFont
-    fonts=[Path(os.environ.get('WINDIR','C:/Windows'))/'Fonts/arialbd.ttf',Path('/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf')]
-    font_path=next((x for x in fonts if x.exists()),None)
-    f=ImageFont.truetype(str(font_path),100) if font_path else ImageFont.load_default()
-    im=Image.new('RGBA',(600,160));d=ImageDraw.Draw(im)
-    d.rounded_rectangle((8,8,592,150),28,fill=(7,24,31,255),outline='#66eed2',width=5)
-    b=d.textbbox((0,0),'ГООЛ!',font=f)
-    d.text(((600-(b[2]-b[0]))/2,3),'ГООЛ!',font=f,fill='#66eed2',stroke_width=2,stroke_fill='white')
-    im.save(path)
+    from visuals import goal_frame
+    goal_frame(.8).save(path)
 
 
 def render(video,music,clips,output,title='',score='',music_level=.18,source_level=.20,
-           crop_top=.15,show_final=True,log=print,cancel=None,replays=True,replay_speed=.5,max_seconds=180,goal_animation=True):
+           crop_top=.15,show_final=True,log=print,cancel=None,replays=True,replay_speed=.5,max_seconds=180,goal_animation=True,action_camera=True):
     info=metadata(video)
     validate_clips(clips,info['duration'])
     timeline=plan_timeline(clips,max_seconds,bool(score and show_final),replays,replay_speed)
@@ -319,23 +292,39 @@ def render(video,music,clips,output,title='',score='',music_level=.18,source_lev
         crop_y=int(info['height']*crop_top)//2*2
         crop_h=(info['height']-crop_y)//2*2
         crop_w=info['width']//2*2
+        tracking_cache={}
+        fire_pattern=None
         for i,c in enumerate(clips):
             log(f'Монтаж: {i+1}/{len(clips)}')
             part=tmp/f'{i:03}.mp4';card=tmp/f'{i:03}.png'
             is_replay=c.get('is_replay',False)
             speed=float(c.get('speed',1));out_duration=segment_duration(c)
             make_card(card,title,'',f'ҚАЙТАЛАУ • {speed:g}×' if is_replay else 'ҮЗДІК СӘТТЕР')
-            vf=f'[0:v]crop={crop_w}:{crop_h}:0:{crop_y},setpts=(PTS-STARTPTS)/{speed},fps=30,split=2[b][f];[b]scale=180:320:force_original_aspect_ratio=increase,crop=180:320,boxblur=10:2,scale=720:1280,eq=brightness=-.22[bg];[f]scale=720:400:force_original_aspect_ratio=decrease,pad=720:400:(ow-iw)/2:(oh-ih)/2:black[fg];[bg][fg]overlay=0:440[v0];[v0][1:v]overlay=0:0,setsar=1,format=yuv420p[carded]'
+            if action_camera:
+                import camera
+                key=(c['start'],c['end'])
+                if key not in tracking_cache:
+                    log('Ойын аймағын қадағалау…')
+                    tracking_cache[key]=camera.track(video,c['start'],c['end'],crop_top,cancel)
+                portrait_w=min(crop_w,int(crop_h*9/16)//2*2)
+                portrait_h=min(crop_h,int(portrait_w*16/9)//2*2)
+                x=camera.crop_expression(tracking_cache[key],crop_w,portrait_w,speed)
+                vf=f"[0:v]setpts=(PTS-STARTPTS)/{speed},crop={crop_w}:{crop_h}:0:{crop_y},crop={portrait_w}:{portrait_h}:x='{x}':y='(ih-oh)/2',scale=720:1280,fps=30[v0];[v0][1:v]overlay=0:0,setsar=1,format=yuv420p[carded]"
+            else:
+                vf=f'[0:v]crop={crop_w}:{crop_h}:0:{crop_y},setpts=(PTS-STARTPTS)/{speed},fps=30,split=2[b][f];[b]scale=180:320:force_original_aspect_ratio=increase,crop=180:320,boxblur=10:2,scale=720:1280,eq=brightness=-.22[bg];[f]scale=720:400:force_original_aspect_ratio=decrease,pad=720:400:(ow-iw)/2:(oh-ih)/2:black[fg];[bg][fg]overlay=0:440[v0];[v0][1:v]overlay=0:0,setsar=1,format=yuv420p[carded]'
             vf+=';[carded]null[v]'
             args=[ffmpeg(),'-v','error','-ss',c['start'],'-t',c['end']-c['start'],'-i',video,'-i',card]
             has_goal=goal_animation and c.get('kind')=='goal' and not is_replay
             audio_index=2
             if has_goal:
-                goal_png=tmp/f'goal{i}.png';make_goal_image(goal_png)
-                args+=['-loop','1','-i',goal_png];audio_index=3
+                if fire_pattern is None:
+                    from visuals import goal_sequence
+                    fire_pattern=goal_sequence(tmp/'fire',cancel)
+                args+=['-framerate','30','-i',fire_pattern];audio_index=3
                 g=max(0,(c['goal_at']-c['start'])/speed)
                 vf=vf.rsplit(';[carded]null[v]',1)[0]
-                vf+=f";[2:v]format=rgba,fade=t=in:st={g}:d=0.12:alpha=1,fade=t=out:st={g+1.8}:d=0.35:alpha=1[goal];[carded][goal]overlay=x=60:y='860+60*exp(-8*(t-{g}))*cos(18*(t-{g}))':enable='between(t,{g},{g+2.2})':shortest=1[v]"
+                vf+=f";[2:v]format=rgba,fade=t=in:st=0:d=0.12:alpha=1,fade=t=out:st=1.8:d=0.4:alpha=1,setpts=PTS+{g}/TB[goal];[carded][goal]overlay=x=32:y='800+28*exp(-8*(t-{g}))*cos(18*(t-{g}))':enable='between(t,{g},{g+2.2})':eof_action=pass:repeatlast=0[v]"
+
             if silent:
                 args+=['-f','lavfi','-i','anullsrc=r=48000:cl=stereo']
                 af=f'[{audio_index}:a]anull[a]'

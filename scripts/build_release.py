@@ -9,7 +9,7 @@ ROOT=Path(__file__).resolve().parent.parent
 sys.path.insert(0,str(ROOT))
 import updater
 
-FILES=['app.py','core.py','downloader.py','publishing.py','timeline.py','workflow.py','updater.py','update_helper.py',
+FILES=['visuals.py','camera.py','app.py','core.py','downloader.py','publishing.py','timeline.py','workflow.py','updater.py','update_helper.py',
        'bootstrap.py','version.json','requirements.txt','1_INSTALL.bat','2_START.bat','3_UPDATE_YOUTUBE.bat',
        'README_KZ.md','VALIDATION.md','README.md']
 

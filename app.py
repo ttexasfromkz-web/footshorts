@@ -40,6 +40,7 @@ class App(tk.Tk):
         self.video=tk.StringVar();self.music=tk.StringVar(value=str(BASE/('music/Stadium_Ignition.mp3' if (BASE/'music/Stadium_Ignition.mp3').is_file() else 'music/Stadium_Ignition.wav')))
         self.title_text=tk.StringVar(value='')
         self.youtube=tk.StringVar();self.quality=tk.StringVar(value='1080')
+        self.action_camera=tk.BooleanVar(value=True)
         self.replays=tk.BooleanVar(value=True);self.replay_speed=tk.StringVar(value='0.5')
         self.score=tk.StringVar();self.target=tk.StringVar(value='180')
         self.music_volume=tk.IntVar(value=18);self.source_volume=tk.IntVar(value=20)
@@ -91,6 +92,9 @@ class App(tk.Tk):
         ttk.Checkbutton(r,text='Голды толық қайталау',variable=self.replays).pack(side='left')
         ttk.Combobox(r,textvariable=self.replay_speed,values=['0.5','0.75','1.0'],width=5,state='readonly').pack(side='left',padx=6)
         ttk.Label(r,text='× • ГООЛ! анимациясы гол уақытында шығады').pack(side='left')
+        r=ttk.Frame(opt);r.pack(fill='x',pady=(5,0))
+        ttk.Checkbutton(r,text='Ойын аймағын үлкейтіп қадағалау (9:16)',variable=self.action_camera).pack(side='left')
+        ttk.Label(r,text='Өшірсеңіз — толық алаң көрінеді').pack(side='left',padx=8)
         controls=ttk.Frame(frame);controls.pack(fill='x',pady=7)
         self.analyze_btn=ttk.Button(controls,text='Қайта талдау (қажет болса)',command=self.analyze);self.analyze_btn.pack(side='left')
         self.export_btn=ttk.Button(controls,text='Есепті түзетіп, қайта жасау',command=self.export);self.export_btn.pack(side='left',padx=8)
@@ -133,6 +137,7 @@ class App(tk.Tk):
             self.target.set(str(settings.get('target',180)));self.quality.set(str(settings.get('quality',1080)))
             self.music_volume.set(round(settings.get('music_level',.18)*100));self.source_volume.set(round(settings.get('source_level',.2)*100))
             self.crop.set(str(settings.get('crop_top',.15)*100));self.roi.set(', '.join(str(v*100) for v in settings.get('roi',[0,0,.5,.17])))
+            self.action_camera.set(settings.get('action_camera',True))
             self.use_ocr.set(settings.get('use_ocr',True));self.replays.set(settings.get('replays',True));self.replay_speed.set(str(settings.get('replay_speed',.5)))
         except Exception as e:self.log('Баптауларды қалпына келтіру: '+str(e))
 
@@ -166,7 +171,7 @@ class App(tk.Tk):
         mv=float(self.music_volume.get())/100;sv=float(self.source_volume.get())/100;crop=float(self.crop.get())/100
         if not 0<=mv<=1 or not 0<=sv<=1 or not 0<=crop<=.35:raise ValueError('Дыбыс: 0–100%, қию: 0–35%.')
         return dict(target=int(self.target.get()),quality=int(self.quality.get()),roi=roi,use_ocr=self.use_ocr.get(),
-                    music_level=mv,source_level=sv,crop_top=crop,replays=self.replays.get(),replay_speed=float(self.replay_speed.get()))
+                    music_level=mv,source_level=sv,crop_top=crop,replays=self.replays.get(),replay_speed=float(self.replay_speed.get()),action_camera=self.action_camera.get())
 
     def refresh_projects(self):
         self.project_paths=workflow.recent_projects(BASE)
@@ -321,12 +326,12 @@ class App(tk.Tk):
             line=self.editor.get('insert linestart','insert lineend');clips=self.parse(line)
             core.validate_clips(clips,core.metadata(self.video.get())['duration'])
             c=clips[0];video=self.video.get()
-            crop=float(self.crop.get())/100;replay=self.replays.get();speed=float(self.replay_speed.get())
+            crop=float(self.crop.get())/100;replay=self.replays.get();speed=float(self.replay_speed.get());action_camera=self.action_camera.get()
             title=self.title_text.get()
             fd,p=tempfile.mkstemp(prefix='football-preview-',suffix='.mp4');os.close(fd)
             def job():
                 core.render(video,None,[c],p,title=title,score='',show_final=False,crop_top=crop,
-                            replays=replay,replay_speed=speed,log=self.log,cancel=self.cancel_event)
+                            replays=replay,replay_speed=speed,action_camera=action_camera,log=self.log,cancel=self.cancel_event)
                 return p
             def opened(p):
                 if os.name=='nt':os.startfile(p)
@@ -354,6 +359,7 @@ class App(tk.Tk):
             self.target.set(str(settings['target']));self.crop.set(str(settings['crop_top']*100))
             self.music_volume.set(round(settings['music_level']*100));self.source_volume.set(round(settings['source_level']*100))
             self.roi.set(', '.join(str(x*100) for x in settings['roi']))
+            self.action_camera.set(settings['action_camera'])
             self.replays.set(settings['replays']);self.replay_speed.set(str(settings['replay_speed']));self.use_ocr.set(settings['use_ocr'])
             self.project_ready(workflow.output_files(p))
         except Exception as e:messagebox.showerror('Қате',str(e))
