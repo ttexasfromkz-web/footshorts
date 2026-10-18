@@ -57,6 +57,13 @@ class WindowsReviewTests(unittest.TestCase):
             self.assertIsNotNone(audio.audio,audio.audio_error)
             self.assertFalse(audio.audio.failure())
         finally:audio.close()
+        fallback=PreviewPlayer(self.video,audio=True)
+        try:
+            with patch('audio_process.AudioProcess',side_effect=RuntimeError('audio unavailable')):
+                fallback.play()
+            self.assertIn('audio unavailable',fallback.audio_error)
+            self.assertIsNotNone(fallback.frame())
+        finally:fallback.close()
 
     def test_review_controls_save_goal_trim_and_focus(self):
         import tkinter as tk

@@ -204,6 +204,7 @@ class App(tk.Tk):
 
     def new_project(self):
         if self.busy:return
+        self.clip_details={}
         self.project_dir=None;self.plan=None;self.source_url='';self.source_video='';self.title_score=''
         self.youtube.set('');self.video.set('');self.title_text.set('');self.score.set('');self.recent.set('')
         self.editor.delete('1.0','end');self.status.set('Жаңа жоба. Сілтемені қойып, «ШОРТС ЖАСАУ» басыңыз. Бұрынғы жобалар сақталды.')
@@ -302,6 +303,7 @@ class App(tk.Tk):
         if path:
             var.set(path)
             if kind=='video':
+                self.clip_details={}
                 self.plan=None;self.project_dir=None;self.score.set('');self.score_verified.set(False);self.source_url='';self.title_score='';self.source_video=''
                 self.youtube.set('');self.recent.set('');self.editor.delete('1.0','end')
                 self.title_text.set('')
@@ -339,6 +341,8 @@ class App(tk.Tk):
                     if self.batch_window and self.batch_window.winfo_exists():self.batch_window.refresh(payload)
                     continue
                 if kind=='project_source':
+                    if self.project_dir!=payload['directory']:
+                        self.clip_details={};self.plan=None;self.score.set('');self.editor.delete('1.0','end')
                     self.project_dir=payload['directory'];self.source_video=payload['video']
                     self.video.set(payload['video']);self.title_text.set(payload['title'])
                     self.refresh_projects();self.recent.set(Path(self.project_dir).name)

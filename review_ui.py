@@ -24,10 +24,12 @@ def seconds(text):
 
 class ReviewWindow(tk.Toplevel):
     def __init__(self,owner,project,on_saved,on_closed,audio=True):
+        source=workflow.media_path(project,project['source_file'])
+        info=core.metadata(source)
         super().__init__(owner)
         self.project=copy.deepcopy(project);self.on_saved=on_saved;self.on_closed=on_closed
-        self.source=workflow.media_path(project,project['source_file'])
-        self.model=ReviewModel(project.get('clips',[]),core.metadata(self.source)['duration'])
+        self.source=source
+        self.model=ReviewModel(project.get('clips',[]),info['duration'])
         self.baseline=copy.deepcopy(self.model.clips)
         self.audio_enabled=audio;self.player=None;self.mode='source';self.index=0
         self.alive=True;self.after_id=None;self.scrub_id=None;self.scale_guard=False;self.image_box=None;self.clip_stop=None

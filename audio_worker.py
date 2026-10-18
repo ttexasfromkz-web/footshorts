@@ -18,9 +18,10 @@ def main():
             ff_opts={'vn':True,'paused':True,'autoexit':False,'volume':.7,'ss':float(sys.argv[2])})
         until=time.monotonic()+4
         while time.monotonic()<until:
-            if player.get_metadata().get('duration',0)>0:break
+            if (player.get_metadata().get('duration') or 0)>0:break
             time.sleep(.01)
         else:raise RuntimeError('Дыбыстық файл ашылмады.')
+        time.sleep(.1)
         emit('ready')
         for line in sys.stdin:
             command=json.loads(line)
