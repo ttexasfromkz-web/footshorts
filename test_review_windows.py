@@ -104,6 +104,12 @@ class WindowsReviewTests(unittest.TestCase):
             self.assertEqual(window.mode,'source')
             window.delete_clip();self.assertEqual(len(window.model.clips),1)
             window.undo();self.assertEqual(len(window.model.clips),2)
+            window.play_clip();initial=window.player.position()
+            for _ in range(4):time.sleep(.05);root.update()
+            self.assertGreater(window.player.position(),initial+.1)
+            window.player.seek(window.model.clips[0]['end']+.1)
+            time.sleep(.05);root.update()
+            self.assertFalse(window.player.playing)
         finally:
             if window:window.shutdown()
             root.destroy()
