@@ -32,6 +32,19 @@ class WorkflowTests(unittest.TestCase):
             self.assertTrue(list((project/'source/history').rglob('*.mp4')))
             self.assertEqual(workflow.load_project(project)['revision'],2)
 
+    def test_source_title_is_available_before_analysis_finishes(self):
+        updates=[]
+        def analyze(*args):
+            self.assertEqual(len(updates),1)
+            self.assertIn('Ақтөбе',updates[0]['title'])
+            self.assertTrue(Path(updates[0]['video']).is_file())
+            self.assertEqual(workflow.load_project(updates[0]['directory'])['title'],updates[0]['title'])
+            raise RuntimeError('analysis stopped')
+        with tempfile.TemporaryDirectory() as d,patch('workflow.downloader.download',side_effect=self.fake_download),patch('workflow.core.analyze',side_effect=analyze):
+            with self.assertRaisesRegex(RuntimeError,'analysis stopped'):
+                workflow.create_project(d,'https://youtu.be/so5hJv_2cVQ',log=lambda _:None,on_source=updates.append)
+            self.assertEqual(len(updates),1)
+
     def test_new_project_preserves_previous(self):
         with tempfile.TemporaryDirectory() as d,patch('workflow.downloader.download',side_effect=self.fake_download),patch('workflow.core.analyze',side_effect=self.fake_analyze),patch('workflow.core.render',side_effect=self.fake_render):
             a=workflow.create_project(d,'https://youtu.be/so5hJv_2cVQ',log=lambda _:None)

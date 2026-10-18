@@ -199,7 +199,8 @@ class App(tk.Tk):
             elif not Path(video).is_file():raise ValueError('YouTube сілтемесін қойыңыз немесе видео таңдаңыз.')
             settings=self.settings();title=self.title_text.get().strip()
             self.project_dir=None
-            self.start(lambda:workflow.create_project(BASE,url,video,music,settings,title,self.log,self.cancel_event),self.project_ready)
+            self.start(lambda:workflow.create_project(BASE,url,video,music,settings,title,self.log,self.cancel_event,
+                on_source=lambda info:self.jobs.put(('project_source',info))),self.project_ready)
         except Exception as e:messagebox.showerror('Қате',str(e))
 
     def project_ready(self,result):
@@ -246,6 +247,11 @@ class App(tk.Tk):
                         self.status.set('Жаңа нұсқа дайын. Жұмыс аяқталған соң жаңарып, бағдарлама қайта ашылады.')
                     elif kind=='update_error':self.log('Жаңартуды тексеру мүмкін болмады; ағымдағы нұсқа жұмыс істейді: '+payload)
                     else:self.log('Жаңартуды тексеру аяқталды; жаңа нұсқа жоқ.')
+                    continue
+                if kind=='project_source':
+                    self.project_dir=payload['directory'];self.source_video=payload['video']
+                    self.video.set(payload['video']);self.title_text.set(payload['title'])
+                    self.refresh_projects();self.recent.set(Path(self.project_dir).name)
                     continue
                 if kind=='log':
                     self.logs.configure(state='normal');self.logs.insert('end',payload+'\n');self.logs.see('end');self.logs.configure(state='disabled')

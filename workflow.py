@@ -135,7 +135,7 @@ def render_project(project,log=print,cancel=None):
         project['error']=str(e);save_project(project);raise
 
 
-def create_project(base,url='',local_video='',music='',settings=None,title_hint='',log=print,cancel=None):
+def create_project(base,url='',local_video='',music='',settings=None,title_hint='',log=print,cancel=None,on_source=None):
     settings={**DEFAULTS,**(settings or {})}
     if not url and not Path(local_video).is_file():raise ValueError('YouTube сілтемесін немесе видео файлын беріңіз.')
     if url:url=downloader.normalize_url(url)
@@ -169,6 +169,9 @@ def create_project(base,url='',local_video='',music='',settings=None,title_hint=
             music_dest=source/('background'+Path(music).suffix.lower());shutil.copy2(music,music_dest)
             p['music_file']='source/'+music_dest.name;p['music_title']=Path(music).stem
         p=rename_project(p,p['title']);save_project(p)
+        if on_source:
+            on_source(dict(title=p['title'],directory=p['directory'],
+                           video=str(media_path(p,p['source_file']))))
         p['status']='analyzing';save_project(p)
         analysis=core.analyze(str(media_path(p,p['source_file'])),settings['target'],tuple(settings['roi']),
                               settings['use_ocr'],log,cancel)
