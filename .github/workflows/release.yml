@@ -10,6 +10,10 @@ permissions:
 jobs:
   release:
     runs-on: windows-latest
+    env:
+      FOOTSHORTS_GUI_TESTS: '1'
+      SDL_AUDIODRIVER: dummy
+      PYTHONUTF8: '1'
     steps:
       - uses: actions/checkout@v6
       - uses: actions/setup-python@v7

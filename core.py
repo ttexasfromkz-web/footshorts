@@ -267,6 +267,8 @@ def render(video,music,clips,output,title='',score='',music_level=.18,source_lev
            crop_top=.15,show_final=True,log=print,cancel=None,replays=True,replay_speed=.5,max_seconds=180,goal_animation=True,action_camera=True,intro=True,logo_dir=None):
     info=metadata(video)
     validate_clips(clips,info['duration'])
+    from review_model import validate_camera
+    for clip in clips:validate_camera(clip)
     timeline=plan_timeline(clips,max_seconds,bool(score and show_final),replays,replay_speed,intro_seconds=3 if intro else 0)
     clips=timeline['segments']
     total=timeline['duration']-(3 if score and show_final else 0)
@@ -316,16 +318,20 @@ def render(video,music,clips,output,title='',score='',music_level=.18,source_lev
             is_replay=c.get('is_replay',False)
             speed=float(c.get('speed',1));out_duration=segment_duration(c)
             make_card(card,title,'',f'ҚАЙТАЛАУ • {speed:g}×' if is_replay else 'ҮЗДІК СӘТТЕР')
-            if action_camera:
+            if action_camera or c.get('focus_points') or float(c.get('zoom',1))>1:
                 import camera
-                key=(c['start'],c['end'])
-                if key not in tracking_cache:
-                    log('Ойын аймағын қадағалау…')
-                    tracking_cache[key]=camera.track(video,c['start'],c['end'],crop_top,cancel)
-                portrait_w=min(crop_w,int(crop_h*9/16)//2*2)
-                portrait_h=min(crop_h,int(portrait_w*16/9)//2*2)
-                x=camera.crop_expression(tracking_cache[key],crop_w,portrait_w,speed)
-                vf=f"[0:v]setpts=(PTS-STARTPTS)/{speed},crop={crop_w}:{crop_h}:0:{crop_y},crop={portrait_w}:{portrait_h}:x='{x}':y='(ih-oh)/2',scale=720:1280,fps=30[v0];[v0][1:v]overlay=0:0,setsar=1,format=yuv420p[carded]"
+                _,_,_,portrait_w,portrait_h=camera.geometry(info['width'],info['height'],crop_top,c.get('zoom',1))
+                if c.get('focus_points'):
+                    xs,ys=camera.manual_tracks(c,info['height'],crop_y,crop_h)
+                    y=camera.crop_expression(ys,crop_h,portrait_h,speed)
+                else:
+                    key=(c['start'],c['end'])
+                    if key not in tracking_cache:
+                        log('Ойын аймағын қадағалау…')
+                        tracking_cache[key]=camera.track(video,c['start'],c['end'],crop_top,cancel)
+                    xs=tracking_cache[key];y='(ih-oh)/2'
+                x=camera.crop_expression(xs,crop_w,portrait_w,speed)
+                vf=f"[0:v]setpts=(PTS-STARTPTS)/{speed},crop={crop_w}:{crop_h}:0:{crop_y},crop={portrait_w}:{portrait_h}:x='{x}':y='{y}',scale=720:1280,fps=30[v0];[v0][1:v]overlay=0:0,setsar=1,format=yuv420p[carded]"
             else:
                 vf=f'[0:v]crop={crop_w}:{crop_h}:0:{crop_y},setpts=(PTS-STARTPTS)/{speed},fps=30,split=2[b][f];[b]scale=180:320:force_original_aspect_ratio=increase,crop=180:320,boxblur=10:2,scale=720:1280,eq=brightness=-.22[bg];[f]scale=720:400:force_original_aspect_ratio=decrease,pad=720:400:(ow-iw)/2:(oh-ih)/2:black[fg];[bg][fg]overlay=0:440[v0];[v0][1:v]overlay=0:0,setsar=1,format=yuv420p[carded]'
             vf+=';[carded]null[v]'

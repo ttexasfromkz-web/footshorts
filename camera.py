@@ -73,3 +73,32 @@ def crop_expression(points,source_width,crop_width,speed=1):
         if b<=a:continue
         expr=f'if(lt(t,{b:.3f}),{x:.3f}+({y-x:.3f})*clip((t-{a:.3f})/{b-a:.3f},0,1),{expr})'
     return expr
+
+
+
+def geometry(width,height,crop_top=0,zoom=1):
+    source_w=int(width)//2*2;top=int(height*crop_top)//2*2
+    available=(int(height)-top)//2*2
+    ph=max(2,int(available/float(zoom))//2*2)
+    pw=max(2,min(source_w,int(ph*9/16)//2*2))
+    ph=max(2,min(ph,int(pw*16/9)//2*2))
+    return source_w,top,available,pw,ph
+
+
+def manual_rectangle(clip,time,width,height,crop_top=0):
+    from review_model import interpolate
+    sw,top,available,pw,ph=geometry(width,height,crop_top,clip.get('zoom',1))
+    points=clip.get('focus_points',[])
+    x=interpolate(points,time,'x')*sw-pw/2
+    y=interpolate(points,time,'y',crop_top+(1-crop_top)/2)*height-ph/2
+    return max(0,min(sw-pw,x)),max(top,min(top+available-ph,y)),pw,ph
+
+
+def manual_tracks(clip,height,top,available):
+    from review_model import interpolate
+    points=clip.get('focus_points',[])
+    start,end=clip['start'],clip['end']
+    times=sorted({start,end,*(p['time'] for p in points if start<p['time']<end)})
+    xs=[(t-start,interpolate(points,t,'x')) for t in times]
+    ys=[(t-start,max(0,min(1,(interpolate(points,t,'y')*height-top)/available))) for t in times]
+    return xs,ys
