@@ -22,31 +22,39 @@ class PreviewPlayer:
         try:
             if self.audio is None:
                 from audio_process import AudioProcess
-                self.audio=AudioProcess(self.path)
-            self.audio.seek(self.pos,relative=False,accurate=True)
+                self.audio=AudioProcess(self.path,start=self.pos)
             self.audio.set_pause(not self.playing)
-        except Exception as e:
-            self.audio_error=str(e);self.audio_enabled=False
-            if self.audio:
-                self.audio.close_player();self.audio=None
+        except Exception as e:self._disable_audio(e)
+
+    def _disable_audio(self,error):
+        self.audio_error=str(error);self.audio_enabled=False
+        audio=self.audio;self.audio=None
+        if audio:
+            try:audio.close_player()
+            except Exception:pass
 
     def play(self):
         if self.closed or self.playing:return
         if self.pos>=self.duration-.03:self.seek(0)
-        self.started=self.clock();self.playing=True;self._audio()
+        self.playing=True;self._audio();self.started=self.clock()
 
     def pause(self):
         if self.closed:return
         self.pos=self.position();self.playing=False
-        if self.audio:self.audio.set_pause(True)
+        if self.audio:
+            try:self.audio.set_pause(True)
+            except Exception as e:self._disable_audio(e)
 
     def seek(self,t):
         if self.closed:return
         self.pos=max(0,min(float(t),max(0,self.duration-1/self.fps)))
         self.started=self.clock()
         if self.audio:
-            self.audio.seek(self.pos,relative=False,accurate=True)
-            self.audio.set_pause(not self.playing)
+            audio=self.audio;self.audio=None
+            try:audio.close_player()
+            except Exception:pass
+        if self.playing:
+            self._audio();self.started=self.clock()
 
     def frame(self):
         if self.closed:return None

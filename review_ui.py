@@ -205,7 +205,9 @@ class ReviewWindow(tk.Toplevel):
     def select_clip(self,event=None):
         chosen=self.listbox.curselection()
         if not chosen:return
-        self.index=int(chosen[0])
+        selected=int(chosen[0])
+        if selected==self.index and self.mode=='source':return
+        self.index=selected
         if self.mode!='source':self.open_video('source')
         if self.player:self.player.pause();self.player.seek(self.model.clips[self.index]['start'])
         self.refresh_clips()

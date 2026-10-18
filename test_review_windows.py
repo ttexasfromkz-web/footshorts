@@ -52,7 +52,10 @@ class WindowsReviewTests(unittest.TestCase):
         try:
             audio.play();time.sleep(.15)
             self.assertIsNotNone(audio.audio,audio.audio_error)
+            self.assertFalse(audio.audio.failure())
             audio.seek(1);audio.pause()
+            self.assertIsNotNone(audio.audio,audio.audio_error)
+            self.assertFalse(audio.audio.failure())
         finally:audio.close()
 
     def test_review_controls_save_goal_trim_and_focus(self):

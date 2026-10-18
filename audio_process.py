@@ -9,10 +9,10 @@ import threading
 
 
 class AudioProcess:
-    def __init__(self,path):
+    def __init__(self,path,start=0):
         self.ready=False;self.closed=False;self.error='';self.event=threading.Event()
         self.log=tempfile.TemporaryFile(mode='w+b')
-        self.process=subprocess.Popen([sys.executable,str(Path(__file__).with_name('audio_worker.py')),str(path)],
+        self.process=subprocess.Popen([sys.executable,str(Path(__file__).with_name('audio_worker.py')),str(path),str(float(start))],
             stdin=subprocess.PIPE,stdout=subprocess.PIPE,stderr=self.log,text=True,encoding='utf-8',
             bufsize=1,creationflags=(0x08000000 if os.name=='nt' else 0))
         self.reader=threading.Thread(target=self._read,daemon=True);self.reader.start()
@@ -43,9 +43,6 @@ class AudioProcess:
         if self.process.poll() is not None:raise RuntimeError(self.failure())
         self.process.stdin.write(json.dumps(command)+'\n');self.process.stdin.flush()
 
-    def seek(self,t,relative=False,accurate=True):
-        self.send(dict(action='seek',time=float(t)))
-
     def set_pause(self,state):
         self.send(dict(action='pause',paused=bool(state)))
 
@@ -53,7 +50,7 @@ class AudioProcess:
         if self.closed:return
         try:
             if self.process.poll() is None:self.send({'action':'close'})
-        except (OSError,ValueError):pass
+        except (OSError,ValueError,RuntimeError):pass
         self.closed=True
         try:self.process.wait(timeout=2)
         except subprocess.TimeoutExpired:
