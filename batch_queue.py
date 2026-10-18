@@ -41,6 +41,27 @@ class BatchQueue:
                 existing.add(url)
             self.save()
 
+    def add_files(self,paths):
+        """Keep full local paths (including spaces) and snapshot each as one job."""
+        with self.lock:
+            if self.running:raise ValueError('Кезек жүріп жатыр. Аяқталған соң қосыңыз.')
+            paths=[Path(p).expanduser().resolve() for p in paths]
+            for path in paths:
+                if not path.is_file():raise ValueError('Видео файлы табылмады: '+str(path))
+            existing={i['url'] for i in self.items if i['status'] in ('queued','running')}
+            for path in paths:
+                if str(path) in existing:continue
+                self.items.append(dict(id=uuid.uuid4().hex,url=str(path),source_type='file',
+                    status='queued',error='',directory='',title=path.stem))
+                existing.add(str(path))
+            self.save()
+
+    def remove(self,ids):
+        with self.lock:
+            if self.running:raise ValueError('Кезек жүріп жатыр. Аяқталған соң өшіріңіз.')
+            self.items=[i for i in self.items if i['id'] not in ids]
+            self.save()
+
     def retry_failed(self):
         with self.lock:
             if self.running:return

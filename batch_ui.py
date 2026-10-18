@@ -1,6 +1,6 @@
 """A persistent multi-link queue window integrated with the app worker."""
 import tkinter as tk
-from tkinter import ttk,messagebox
+from tkinter import ttk,messagebox,filedialog
 import workflow
 
 
@@ -13,18 +13,20 @@ class BatchWindow(tk.Toplevel):
         self.title('Матчтарды кезекпен өңдеу');self.geometry('1000x620');self.minsize(800,480)
         self.protocol('WM_DELETE_WINDOW',self.withdraw)
         frame=ttk.Frame(self,padding=12);frame.pack(fill='both',expand=True)
-        ttk.Label(frame,text='Әр жолға бір YouTube сілтемесі. Барлығына негізгі терезедегі баптаулар қолданылады.').pack(anchor='w')
+        ttk.Label(frame,text='YouTube сілтемелерін әр жолға жазыңыз немесе бірнеше видео файлын қосыңыз. Баптаулар барлығына ортақ.').pack(anchor='w')
         self.urls=tk.Text(frame,height=5,wrap='none');self.urls.pack(fill='x',pady=6)
         row=ttk.Frame(frame);row.pack(fill='x',pady=(0,6))
-        for text,fn in [('Кезекке қосу',self.add),('Бәрін өңдеу',self.run),
+        manage=ttk.Frame(frame);manage.pack(fill='x',pady=(0,6))
+        for text,fn in [('Кезекке қосу',self.add),('Видео файлдарын қосу…',self.add_files),('Кезекті бастау',self.run),
                         ('Тоқтату',owner.cancel_event.set),('Қателерді қайта кезекке қою',self.retry),
                         ('Дайындарын тазалау',self.clear)]:
-            ttk.Button(row,text=text,command=fn).pack(side='left',padx=2)
+            ttk.Button(manage if fn in (self.retry,self.clear) else row,text=text,command=fn).pack(side='left',padx=2)
         self.table=ttk.Treeview(frame,columns=('status','title','url','error'),show='headings')
-        for key,label,width in [('status','Күйі',100),('title','Матч',180),('url','Сілтеме',270),('error','Мәлімет',320)]:
+        for key,label,width in [('status','Күйі',100),('title','Матч',180),('url','Сілтеме / видео файлы',270),('error','Мәлімет',320)]:
             self.table.heading(key,text=label);self.table.column(key,width=width,minwidth=60)
         self.table.pack(fill='both',expand=True)
         self.table.bind('<Double-1>',lambda _:self.open_selected())
+        ttk.Button(frame,text='Таңдалғанды кезектен өшіру',command=self.remove_selected).pack(anchor='e',pady=3)
         ttk.Button(frame,text='Таңдалған жобаны ашу',command=self.open_selected).pack(anchor='e',pady=6)
         self.status=ttk.Label(frame,text='');self.status.pack(anchor='w');self.refresh()
 
@@ -44,6 +46,17 @@ class BatchWindow(tk.Toplevel):
         try:self.model.add(self.urls.get('1.0','end'));self.urls.delete('1.0','end');self.refresh()
         except Exception as e:messagebox.showerror('Кезек',str(e),parent=self)
 
+    def add_files(self):
+        paths=filedialog.askopenfilenames(parent=self,title='Кезекке видео қосу',
+            filetypes=[('Видео','*.mp4 *.mkv *.mov *.avi *.webm *.m4v'),('Барлық файлдар','*.*')])
+        if paths:
+            try:self.model.add_files(paths);self.refresh()
+            except Exception as e:messagebox.showerror('Кезек',str(e),parent=self)
+
+    def remove_selected(self):
+        try:self.model.remove(set(self.table.selection()));self.refresh()
+        except Exception as e:messagebox.showerror('Кезек',str(e),parent=self)
+
     def retry(self):self.model.retry_failed();self.refresh()
     def clear(self):self.model.clear_done();self.refresh()
 
@@ -53,10 +66,11 @@ class BatchWindow(tk.Toplevel):
         try:
             settings=self.owner.settings();music=self.owner.music.get().strip()
             pending=[i for i in self.model.snapshot() if i['status']=='queued']
-            if not pending:raise ValueError('Кезекте сілтеме жоқ. Алдымен қосыңыз.')
+            if not pending:raise ValueError('Кезекте видео жоқ. Сілтеме немесе видео файлын қосыңыз.')
             base=self.owner.app_base
             def process(url):
-                return workflow.create_project(base,url=url,music=music,settings=settings,
+                local=next((i.get('source_type')=='file' for i in self.model.snapshot() if i['url']==url),False)
+                return workflow.create_project(base,url='' if local else url,local_video=url if local else '',music=music,settings=settings,
                     log=self.owner.log,cancel=self.owner.cancel_event,
                     on_source=lambda info:self.owner.jobs.put(('project_source',info)))
             def job():

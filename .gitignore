@@ -6,3 +6,6 @@ __pycache__/
 *.pyc
 dist/
 *.log
+
+queue.json
+preferences.json

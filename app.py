@@ -72,7 +72,7 @@ class App(tk.Tk):
         ttk.Entry(yt,textvariable=self.youtube).pack(side='left',fill='x',expand=True)
         ttk.Combobox(yt,textvariable=self.quality,values=['720','1080'],width=5,state='readonly').pack(side='left',padx=5)
         self.download_btn=ttk.Button(yt,text='ШОРТС ЖАСАУ',command=self.download);self.download_btn.pack(side='left')
-        ttk.Button(frame,text='Бірнеше сілтеме → кезекпен өңдеу',command=self.open_batch).pack(anchor='w',pady=(0,4))
+        ttk.Button(frame,text='Видеолар кезегі: сілтемелер және файлдар',command=self.open_batch).pack(anchor='w',pady=(0,4))
         projects=ttk.Frame(frame);projects.pack(fill='x',pady=5)
         ttk.Label(projects,text='Жобалар:').pack(side='left')
         self.project_combo=ttk.Combobox(projects,textvariable=self.recent,state='readonly');self.project_combo.pack(side='left',fill='x',expand=True,padx=5)
