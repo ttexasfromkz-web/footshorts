@@ -264,10 +264,10 @@ def make_goal_image(path):
 
 
 def render(video,music,clips,output,title='',score='',music_level=.18,source_level=.20,
-           crop_top=.15,show_final=True,log=print,cancel=None,replays=True,replay_speed=.5,max_seconds=180,goal_animation=True,action_camera=True):
+           crop_top=.15,show_final=True,log=print,cancel=None,replays=True,replay_speed=.5,max_seconds=180,goal_animation=True,action_camera=True,intro=True,logo_dir=None):
     info=metadata(video)
     validate_clips(clips,info['duration'])
-    timeline=plan_timeline(clips,max_seconds,bool(score and show_final),replays,replay_speed)
+    timeline=plan_timeline(clips,max_seconds,bool(score and show_final),replays,replay_speed,intro_seconds=3 if intro else 0)
     clips=timeline['segments']
     total=timeline['duration']-(3 if score and show_final else 0)
     for note in timeline['notes']:log(note)
@@ -283,6 +283,22 @@ def render(video,music,clips,output,title='',score='',music_level=.18,source_lev
     output.parent.mkdir(parents=True,exist_ok=True)
     with tempfile.TemporaryDirectory(prefix='football-render-',dir=str(output.parent)) as tmp:
         tmp=Path(tmp);parts=[]
+        if intro:
+            from visuals import intro_layers
+            from logos import pair
+            badges=pair(title,logo_dir or tmp/'logos',log,cancel)
+            if cancel and cancel.is_set():raise Cancelled()
+            base,left,right=intro_layers(tmp,title,badges)
+            intro_part=tmp/'intro.mp4'
+            log('3 секундтық матч кіріспесі…')
+            intro_filter="[0:v][1:v]overlay=x='-720*pow(1-clip(t/0.75,0,1),3)':y=0[a];[a][2:v]overlay=x='720*pow(1-clip(t/0.75,0,1),3)':y=0,fade=t=in:d=0.12,fade=t=out:st=2.8:d=0.2,setsar=1,format=yuv420p[v]"
+            run([ffmpeg(),'-v','error','-loop','1','-framerate','30','-i',base,
+                 '-i',left,'-i',right,'-f','lavfi','-i','anullsrc=r=48000:cl=stereo',
+                 '-filter_complex_threads','2','-filter_complex',intro_filter,'-map','[v]','-map','3:a',
+                 '-t','3','-c:v','libx264','-preset','fast','-crf','21','-threads','2',
+                 '-c:a','aac','-ar','48000','-ac','2','-y',intro_part],cancel)
+            if abs(metadata(intro_part)['duration']-3)>.12:raise RuntimeError('Кіріспе толық шықпады.')
+            parts.append(intro_part)
         # Normalize source audio; original broadcasts differ greatly in loudness.
         silent=False
         try:

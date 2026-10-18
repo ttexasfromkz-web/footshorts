@@ -12,7 +12,7 @@ import downloader
 import publishing
 
 DEFAULTS=dict(target=180,roi=[0,0,.5,.17],use_ocr=True,music_level=.18,
-              source_level=.2,crop_top=.15,replays=True,replay_speed=.5,action_camera=True)
+              source_level=.2,crop_top=.15,replays=True,replay_speed=.5,action_camera=True,intro=True)
 
 
 def save_project(project):
@@ -74,6 +74,15 @@ def project_text(project):
         text+='\nЖАРИЯЛАУ АЛДЫНДА ТЕКСЕРУ\n'
         if not parsed:text+='Командалар атауы автоматты анықталмады. Матч атауын түзетіңіз.\n'
         if not project.get('score'):text+='Есеп оқылмады. 0:0 деп болжанған жоқ. Есепті енгізіп қайта жасаңыз.\n'
+    if project.get('settings',{}).get('intro',True) and parsed:
+        credits=[]
+        for record in (Path(project['directory'])/'source/logos').glob('*.json'):
+            try:
+                item=json.loads(record.read_text(encoding='utf-8'))
+                if item.get('name') in (parsed['team_a'],parsed['team_b']) and item.get('source'):
+                    credits.append(' • '.join(str(item.get(k,'')) for k in ('name','artist','license','source') if item.get(k)))
+            except (OSError,ValueError):continue
+        if credits:text+='\nЛОГОТИПТЕРДІҢ ДЕРЕККӨЗДЕРІ\n'+'\n'.join(credits)+'\n'
     return text
 
 
@@ -126,7 +135,8 @@ def render_project(project,log=print,cancel=None):
                 title=project['title'],score=project.get('score') or '?',
                 music_level=settings['music_level'],source_level=settings['source_level'],
                 crop_top=settings['crop_top'],replays=settings['replays'],replay_speed=settings['replay_speed'],
-                max_seconds=settings['target'],action_camera=settings['action_camera'],log=log,cancel=cancel)
+                max_seconds=settings['target'],action_camera=settings['action_camera'],intro=settings['intro'],
+                logo_dir=folder/'source/logos',log=log,cancel=cancel)
             text.write_text(project_text(project),encoding='utf-8-sig')
             if cancel and cancel.is_set():raise core.Cancelled()
             return commit_outputs(project,video,text)
@@ -173,7 +183,7 @@ def create_project(base,url='',local_video='',music='',settings=None,title_hint=
             on_source(dict(title=p['title'],directory=p['directory'],
                            video=str(media_path(p,p['source_file']))))
         p['status']='analyzing';save_project(p)
-        analysis=core.analyze(str(media_path(p,p['source_file'])),settings['target'],tuple(settings['roi']),
+        analysis=core.analyze(str(media_path(p,p['source_file'])),max(4,settings['target']-(3 if settings['intro'] else 0)),tuple(settings['roi']),
                               settings['use_ocr'],log,cancel)
         p['analysis']=analysis;p['clips']=analysis['clips'];p['warnings']=analysis.get('warnings',[])
         p['score']=analysis.get('score') or p.get('title_score')

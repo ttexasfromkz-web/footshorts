@@ -49,7 +49,7 @@ def track(video,start,end,crop_top=0,cancel=None):
     cap=cv2.VideoCapture(str(video));samples=[];previous=.5
     try:
         # Work only on chosen footage, twice per source second.
-        for t in np.arange(start,end,.5):
+        for t in np.arange(start,end,max(.5,(end-start)/80)):
             if cancel and cancel.is_set():
                 from core import Cancelled
                 raise Cancelled()
@@ -59,7 +59,7 @@ def track(video,start,end,crop_top=0,cancel=None):
             frame=cv2.resize(frame,(640,max(2,round(frame.shape[0]*640/frame.shape[1]))))
             x,ball=focus(frame,previous)
             # Weak observations do not pull the camera rapidly away from the last focus.
-            previous=x if ball else .7*previous+.3*x
+            previous=x if ball or not samples else .35*previous+.65*x
             samples.append((float(t-start),previous))
     finally:cap.release()
     return smooth_targets(samples)

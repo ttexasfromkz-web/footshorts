@@ -97,3 +97,52 @@ def goal_sequence(folder,cancel=None):
             raise Cancelled()
         goal_frame(i/30).save(folder/f'{i:03}.png')
     return folder/'%03d.png'
+
+
+def intro_layers(folder,title,logos):
+    """A navy/gold VS stage and two separate cards for slide-in animation."""
+    folder=Path(folder);folder.mkdir(exist_ok=True)
+    bg=Image.new('RGBA',(720,1280));d=ImageDraw.Draw(bg)
+    for y in range(1280):
+        glow=max(0,1-abs(y-580)/650)
+        d.line((0,y,720,y),fill=(round(7+6*glow),round(18+16*glow),round(31+23*glow),255))
+    for x in range(-800,1400,140):d.line((x,1280,x+600,0),fill=(211,175,101,15),width=1)
+    centered(d,'МАТЧТЫҢ ҮЗДІК СӘТТЕРІ',(45,239,630,55),27,'#ead29e')
+    d.rounded_rectangle((280,318,440,322),2,fill='#d5b06b')
+    d.ellipse((319,513,401,595),fill='#dcb56b')
+    d.ellipse((322,516,398,592),fill='#0c2034')
+    centered(d,'VS',(328,526,64,52),31,'white')
+    centered(d,'FOOTBALL HIGHLIGHTS',(70,846,580,42),19,'#c9b78e')
+    base=folder/'intro-base.png';bg.save(base)
+    pair=parse_match_title(title)
+    names=[pair['team_a'],pair['team_b']] if pair else ['КОМАНДА 1','КОМАНДА 2']
+    paths=[]
+    for index,name in enumerate(names):
+        layer=Image.new('RGBA',(720,1280));ld=ImageDraw.Draw(layer)
+        x=30 if index==0 else 410
+        ld.rounded_rectangle((x,381,x+280,760),24,fill='#fafafa',outline='#dcb56b',width=3)
+        ld.ellipse((x+38,412,x+242,616),fill='#edf0f3')
+        logo=logos[index] if index<len(logos) else None
+        loaded=False
+        if logo:
+            try:
+                with Image.open(logo['path']) as badge:
+                    badge=badge.convert('RGBA');badge.thumbnail((172,172))
+                    layer.alpha_composite(badge,(x+140-badge.width//2,514-badge.height//2))
+                    loaded=True
+            except (OSError,ValueError):pass
+        ld=ImageDraw.Draw(layer)
+        if not loaded:
+            # Deliberately generic shield, never presented as an official club crest.
+            color='#b82d36' if index==0 else '#236cb4'
+            ld.polygon([(x+78,451),(x+202,451),(x+194,544),(x+140,585),(x+86,544)],fill=color)
+            initials=''.join(w[0] for w in name.split() if w)[:2].upper()
+            centered(ld,initials,(x+91,469,98,77),42,'white')
+        # Two lines preserve legibility for long club names.
+        words=name.upper().split();lines=[' '.join(words)]
+        if len(lines[0])>18 and len(words)>1:
+            cut=max(1,len(words)//2);lines=[' '.join(words[:cut]),' '.join(words[cut:])]
+        for j,line in enumerate(lines):centered(ld,line,(x+16,643+j*37,248,39),27,'#102336')
+        ld.rounded_rectangle((x+92,727,x+188,731),2,fill='#dcb56b')
+        path=folder/('intro-'+str(index)+'.png');layer.save(path);paths.append(path)
+    return base,*paths
