@@ -86,6 +86,34 @@ class MaintenanceTests(unittest.TestCase):
         self.assertIn('00:10',p.snapshot()['text'])
         p.finish(True);self.assertEqual(p.snapshot()['percent'],100)
 
+    def test_real_ffmpeg_reports_intermediate_progress(self):
+        seen=[]
+        core.run([core.ffmpeg(),'-v','error','-re','-f','lavfi','-i','color=s=32x32:r=10:d=2',
+                  '-f','null','-'],progress=seen.append,duration=2)
+        self.assertTrue(any(0<x<1 for x in seen),seen)
+        self.assertEqual(seen[-1],1.)
+
+    @unittest.skipUnless(os.environ.get('FOOTSHORTS_GUI_TESTS')=='1','Windows Tk integration')
+    def test_visible_update_result_and_pipeline_widgets(self):
+        with tempfile.TemporaryDirectory() as d,patch('app.BASE',Path(d)):
+            Path(d,'version.json').write_text('{"version":"1.9.0"}')
+            ui=app.App()
+            try:
+                ui.jobs.put(('update_none',False));ui.poll()
+                self.assertIn('1.9.0',ui.update_status.get())
+                self.assertEqual(ui.retention_choice.get(),'Өшірмеу')
+                ui.busy=True;ui.progress_model.reset()
+                ui.jobs.put(('log','@progress:render:0.5:Тест үзінді'))
+                ui.poll();ui.refresh_progress_values()
+                self.assertEqual(ui.progress_value.get(),71)
+                self.assertIn('Монтаж',ui.progress_text.get())
+                ui.jobs.put(('update_error','offline'));ui.poll()
+                self.assertIn('тексерілмеді',ui.update_status.get())
+            finally:
+                for ident in ui.tk.call('after','info'):
+                    ui.after_cancel(ident)
+                ui.destroy()
+
     def test_ffmpeg_progress_reads_microseconds_and_bounds(self):
         with tempfile.TemporaryDirectory() as d:
             p=Path(d,'progress.txt')

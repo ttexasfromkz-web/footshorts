@@ -40,6 +40,7 @@ def run(args, cancel=None, progress=None, duration=None):
             command=command[:1]+['-progress',str(path),'-nostats']+command[1:]
         p = subprocess.Popen(command, stdin=subprocess.DEVNULL, stdout=subprocess.DEVNULL,
                              stderr=err, creationflags=CREATE_NO_WINDOW)
+        last_fraction=None
         try:
             while True:
                 try:
@@ -51,7 +52,8 @@ def run(args, cancel=None, progress=None, duration=None):
                         raise Cancelled('Тоқтатылды')
                     if progress is not None and duration:
                         fraction=read_progress(path,duration)
-                        if fraction is not None:progress(fraction)
+                        if fraction is not None and fraction!=last_fraction:
+                            progress(fraction);last_fraction=fraction
         finally:
             if p.poll() is None:
                 p.kill()
