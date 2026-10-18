@@ -12,7 +12,7 @@ import downloader
 import publishing
 
 DEFAULTS=dict(target=180,roi=[0,0,.5,.17],use_ocr=True,music_level=.18,
-              source_level=.2,crop_top=.15,replays=True,replay_speed=.5,action_camera=True,intro=True)
+              source_level=.2,crop_top=.15,replays=True,replay_speed=.5,action_camera=False,intro=True)
 
 
 def save_project(project):

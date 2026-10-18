@@ -173,7 +173,7 @@ class ReviewWindow(tk.Toplevel):
         self.canvas.delete('all');self.canvas.create_image(x,y,anchor='nw',image=self.photo)
         if self.mode=='source' and self.model.clips:
             clip=self.model.clips[self.index];points=clip.get('focus_points',[])
-            if points:
+            if points and self.project.get('settings',{}).get('action_camera',False):
                 import camera
                 sw=self.player.info['width'];sh=self.player.info['height']
                 top=float(self.project.get('settings',{}).get('crop_top',.15))
@@ -242,6 +242,7 @@ class ReviewWindow(tk.Toplevel):
             x,y,w,h=self.image_box
             if not x<=event.x<=x+w or not y<=event.y<=y+h:return
             self.model.focus(self.index,self.player.position(),(event.x-x)/w,(event.y-y)/h)
+            self.project.setdefault('settings',{})['action_camera']=True
             self.refresh_clips()
         self.safe(run)
 
@@ -257,7 +258,10 @@ class ReviewWindow(tk.Toplevel):
         self.edit(lambda:self.model.change(self.index,lambda c:c.update(focus_points=[],zoom=1)))
 
     def apply_zoom(self):
-        self.edit(lambda:self.model.change(self.index,lambda c:c.update(zoom=float(self.zoom.get()))))
+        def run():
+            self.model.change(self.index,lambda c:c.update(zoom=float(self.zoom.get())))
+            self.project.setdefault('settings',{})['action_camera']=True
+        self.edit(run)
 
     def delete_clip(self):self.edit(lambda:self.model.delete(self.index))
 
@@ -268,7 +272,6 @@ class ReviewWindow(tk.Toplevel):
         def run():
             clips=self.model.validate()
             settings={**workflow.DEFAULTS,**self.project.get('settings',{})}
-            if any(c.get('focus_points') or c.get('zoom',1)>1 for c in clips):settings['action_camera']=True
             plan_timeline(clips,settings['target'],True,settings['replays'],settings['replay_speed'],
                           intro_seconds=3 if settings['intro'] else 0)
             self.project.update(clips=clips,settings=settings,status='edited')

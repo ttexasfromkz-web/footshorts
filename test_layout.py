@@ -15,6 +15,10 @@ class CompactLayoutTests(unittest.TestCase):
             ui=app.App()
             try:
                 ui.geometry('1600x900');ui.update()
+                self.assertFalse(ui.action_camera.get())
+                ui.zoom_btn.invoke();self.assertTrue(ui.settings()['action_camera'])
+                ui.no_zoom_btn.invoke();self.assertFalse(ui.settings()['action_camera'])
+                ui.zoom_btn.invoke();ui.new_project();self.assertFalse(ui.action_camera.get())
                 self.assertTrue(ui._wide_layout)
                 for left,right in [(ui.analysis_panel,ui.visual_panel),(ui.clips_panel,ui.messages_panel)]:
                     self.assertEqual(left.winfo_y(),right.winfo_y())

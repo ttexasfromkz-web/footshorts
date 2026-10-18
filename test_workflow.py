@@ -16,6 +16,17 @@ class WorkflowTests(unittest.TestCase):
         return dict(score='1:3',clips=[dict(start=0,end=2,kind='goal',goal_at=1,reason='goal')],warnings=[])
     def fake_render(self,video,music,clips,output,**opts):Path(output).write_bytes(opts['score'].encode())
 
+
+    def test_zoom_mode_defaults_off_and_can_be_changed_on_rerender(self):
+        with tempfile.TemporaryDirectory() as d,patch('workflow.downloader.download',side_effect=self.fake_download),patch('workflow.core.analyze',side_effect=self.fake_analyze),patch('workflow.core.render',side_effect=self.fake_render) as render:
+            result=workflow.create_project(d,'https://youtu.be/so5hJv_2cVQ',log=lambda _:None)
+            self.assertFalse(render.call_args.kwargs['action_camera'])
+            self.assertFalse(result['project']['settings']['action_camera'])
+            workflow.rerender(result['directory'],'2:1',settings={'action_camera':True},log=lambda _:None)
+            self.assertTrue(render.call_args.kwargs['action_camera'])
+            workflow.rerender(result['directory'],'2:1',settings={'action_camera':False},log=lambda _:None)
+            self.assertFalse(render.call_args.kwargs['action_camera'])
+
     def test_auto_then_correct_without_downloading_or_analyzing(self):
         with tempfile.TemporaryDirectory() as d,patch('workflow.downloader.download',side_effect=self.fake_download) as download,patch('workflow.core.analyze',side_effect=self.fake_analyze) as analyze,patch('workflow.core.render',side_effect=self.fake_render):
             a=workflow.create_project(d,'https://youtu.be/so5hJv_2cVQ',log=lambda _:None)

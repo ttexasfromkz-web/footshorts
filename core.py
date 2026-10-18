@@ -288,7 +288,7 @@ def make_goal_image(path):
 
 
 def render(video,music,clips,output,title='',score='',music_level=.18,source_level=.20,
-           crop_top=.15,show_final=True,log=print,cancel=None,replays=True,replay_speed=.5,max_seconds=180,goal_animation=True,action_camera=True,intro=True,logo_dir=None):
+           crop_top=.15,show_final=True,log=print,cancel=None,replays=True,replay_speed=.5,max_seconds=180,goal_animation=True,action_camera=False,intro=True,logo_dir=None):
     info=metadata(video)
     validate_clips(clips,info['duration'])
     from review_model import validate_camera
@@ -346,7 +346,7 @@ def render(video,music,clips,output,title='',score='',music_level=.18,source_lev
             is_replay=c.get('is_replay',False)
             speed=float(c.get('speed',1));out_duration=segment_duration(c)
             make_card(card,title,'',f'ҚАЙТАЛАУ • {speed:g}×' if is_replay else 'ҮЗДІК СӘТТЕР')
-            if action_camera or c.get('focus_points') or float(c.get('zoom',1))>1:
+            if action_camera:
                 import camera
                 _,_,_,portrait_w,portrait_h=camera.geometry(info['width'],info['height'],crop_top,c.get('zoom',1))
                 if c.get('focus_points'):

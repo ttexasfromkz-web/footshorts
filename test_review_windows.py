@@ -153,3 +153,19 @@ class WindowsReviewTests(unittest.TestCase):
                 self.assertGreater(color[2] if red else color[0],150)
                 self.assertLess(color[0] if red else color[2],80)
         finally:cap.release()
+
+    def test_no_zoom_keeps_both_sides_even_with_saved_manual_zoom(self):
+        output=self.folder/'no-zoom-export.mp4'
+        clip=dict(start=0,end=4,kind='highlight',
+            focus_points=[dict(time=0,x=.17,y=.5)],zoom=2)
+        with patch('camera.track',side_effect=AssertionError('No zoom must not track')):
+            core.render(str(self.video),None,[clip],output,title='A — B',score='',crop_top=0,intro=False,
+                        show_final=False,replays=False,action_camera=False,max_seconds=30,log=lambda _:None)
+        cap=cv2.VideoCapture(str(output))
+        try:
+            cap.set(cv2.CAP_PROP_POS_MSEC,1000);ok,frame=cap.read();self.assertTrue(ok)
+            red=frame[600:660,80:140].mean(axis=(0,1))
+            blue=frame[600:660,580:640].mean(axis=(0,1))
+            self.assertGreater(red[2],150);self.assertLess(red[0],80)
+            self.assertGreater(blue[0],150);self.assertLess(blue[2],80)
+        finally:cap.release()

@@ -46,7 +46,7 @@ class App(tk.Tk):
         self.title_text=tk.StringVar(value='')
         self.youtube=tk.StringVar();self.quality=tk.StringVar(value='1080')
         self.intro=tk.BooleanVar(value=True)
-        self.action_camera=tk.BooleanVar(value=True)
+        self.action_camera=tk.BooleanVar(value=False)
         self.replays=tk.BooleanVar(value=True);self.replay_speed=tk.StringVar(value='0.5')
         self.score=tk.StringVar();self.target=tk.StringVar(value='180')
         self.music_volume=tk.IntVar(value=18);self.source_volume=tk.IntVar(value=20)
@@ -124,7 +124,11 @@ class App(tk.Tk):
         ttk.Label(r,text='× • ГООЛ! анимациясымен').pack(side='left')
         opt=self.visual_panel
         r=ttk.Frame(opt);r.pack(fill='x',pady=2)
-        ttk.Checkbutton(r,text='Ойын аймағын қадағалау (9:16)',variable=self.action_camera).pack(side='left')
+        self.no_zoom_btn=ttk.Radiobutton(r,text='Зумсыз — толық алаң',variable=self.action_camera,value=False)
+        self.no_zoom_btn.pack(side='left')
+        r=ttk.Frame(opt);r.pack(fill='x',pady=2)
+        self.zoom_btn=ttk.Radiobutton(r,text='Зуммен — ойынды қадағалау',variable=self.action_camera,value=True)
+        self.zoom_btn.pack(side='left')
         ttk.Label(r,text='Жоғарыдан қию %').pack(side='left',padx=(8,4))
         ttk.Spinbox(r,from_=0,to=35,textvariable=self.crop,width=5).pack(side='left')
         ttk.Checkbutton(opt,text='3 секундтық кіріспе: логотиптер мен атаулар',variable=self.intro).pack(anchor='w',pady=2)
@@ -236,7 +240,7 @@ class App(tk.Tk):
             self.music_volume.set(round(settings.get('music_level',.18)*100));self.source_volume.set(round(settings.get('source_level',.2)*100))
             self.crop.set(str(settings.get('crop_top',.15)*100));self.roi.set(', '.join(str(v*100) for v in settings.get('roi',[0,0,.5,.17])))
             self.intro.set(settings.get('intro',True))
-            self.action_camera.set(settings.get('action_camera',True))
+            self.action_camera.set(settings.get('action_camera',False))
             self.use_ocr.set(settings.get('use_ocr',True));self.replays.set(settings.get('replays',True));self.replay_speed.set(str(settings.get('replay_speed',.5)))
         except Exception as e:self.log('Баптауларды қалпына келтіру: '+str(e))
 
@@ -297,6 +301,7 @@ class App(tk.Tk):
     def new_project(self):
         if self.busy:return
         self.clip_details={}
+        self.action_camera.set(False)
         self.project_dir=None;self.plan=None;self.source_url='';self.source_video='';self.title_score=''
         self.youtube.set('');self.video.set('');self.title_text.set('');self.score.set('');self.recent.set('')
         self.editor.delete('1.0','end');self.status.set('Жаңа жоба. Сілтемені қойып, «ШОРТС ЖАСАУ» басыңыз. Бұрынғы жобалар сақталды.')
