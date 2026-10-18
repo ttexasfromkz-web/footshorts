@@ -21,8 +21,8 @@ class PreviewPlayer:
         if not self.audio_enabled:return
         try:
             if self.audio is None:
-                from ffpyplayer.player import MediaPlayer
-                self.audio=MediaPlayer(self.path,ff_opts={'vn':True,'paused':True,'volume':.7})
+                from audio_process import AudioProcess
+                self.audio=AudioProcess(self.path)
             self.audio.seek(self.pos,relative=False,accurate=True)
             self.audio.set_pause(not self.playing)
         except Exception as e:
@@ -50,6 +50,10 @@ class PreviewPlayer:
 
     def frame(self):
         if self.closed:return None
+        if self.audio:
+            error=self.audio.failure()
+            if error:
+                self.audio_error=error;self.audio.close_player();self.audio=None;self.audio_enabled=False
         t=self.position()
         if t>=self.duration and self.playing:self.pause()
         index=min(int(self.info['duration']*self.fps)-1,max(0,round(t*self.fps)))

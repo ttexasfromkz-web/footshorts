@@ -30,7 +30,7 @@ class ReviewWindow(tk.Toplevel):
         self.model=ReviewModel(project.get('clips',[]),core.metadata(self.source)['duration'])
         self.baseline=copy.deepcopy(self.model.clips)
         self.audio_enabled=audio;self.player=None;self.mode='source';self.index=0
-        self.alive=True;self.after_id=None;self.scrub_id=None;self.scale_guard=False;self.image_box=None
+        self.alive=True;self.after_id=None;self.scrub_id=None;self.scale_guard=False;self.image_box=None;self.clip_stop=None
         self.title('Матчты көру және өңдеу — '+project['title'])
         self.geometry('1200x800');self.minsize(960,680)
         self.transient(owner)
@@ -53,6 +53,7 @@ class ReviewWindow(tk.Toplevel):
         ttk.Label(side,text='Үзінділер',font=('Segoe UI',11,'bold')).pack(anchor='w')
         self.listbox=tk.Listbox(side,width=32,height=6,exportselection=False)
         self.listbox.pack(fill='both',expand=True);self.listbox.bind('<<ListboxSelect>>',self.select_clip)
+        ttk.Button(side,text='Таңдалған үзіндіні ойнату',command=self.play_clip).pack(fill='x',pady=(4,0))
         row=ttk.Frame(side);row.pack(fill='x',pady=5)
         ttk.Button(row,text='Үзіндіні өшіру',command=self.delete_clip).pack(side='left')
         ttk.Button(row,text='Кері қайтару',command=self.undo).pack(side='left',padx=4)
@@ -111,11 +112,18 @@ class ReviewWindow(tk.Toplevel):
             if not path.is_file():raise ValueError('Дайын видео әлі жоқ.')
             candidate=PreviewPlayer(path,audio=self.audio_enabled)
             if self.player:self.player.close()
-            self.player=candidate;self.mode=mode
+            self.player=candidate;self.mode=mode;self.clip_stop=None
             self.scale.configure(to=candidate.duration)
             self.mode_label.configure(text='Бастапқы видео' if mode=='source' else 'Соңғы экспорт')
             if mode=='source' and self.model.clips:candidate.seek(self.model.clips[self.index]['start'])
             self.draw()
+        self.safe(run)
+
+    def play_clip(self):
+        def run():
+            if self.mode!='source':self.open_video('source')
+            c=self.current();self.player.pause();self.player.seek(c['start'])
+            self.clip_stop=c['end'];self.player.play()
         self.safe(run)
 
     def toggle(self):
@@ -143,6 +151,8 @@ class ReviewWindow(tk.Toplevel):
     def tick(self):
         if not self.alive:return
         if self.player:
+            if self.clip_stop is not None and self.player.playing and self.player.position()>=self.clip_stop:
+                self.player.pause();self.player.seek(self.clip_stop-1/self.player.fps);self.clip_stop=None
             self.draw()
             self.scale_guard=True;self.scale.set(self.player.position());self.scale_guard=False
         self.after_id=self.after(33,self.tick)
