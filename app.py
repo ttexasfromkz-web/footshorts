@@ -122,7 +122,7 @@ class App(tk.Tk):
         self.protocol('WM_DELETE_WINDOW',self.close)
         self.after(0,self.restore_state)
         self.after(500,lambda:updater.mark_healthy(BASE))
-        self.after(2000,self.check_updates)
+        self.after(200,self.check_updates)
 
     def save_state(self):
         state=dict(project=self.project_dir,youtube=self.youtube.get(),video=self.video.get(),music=self.music.get(),
@@ -152,8 +152,23 @@ class App(tk.Tk):
         self.update_checking=True
         def worker():
             try:
-                stage=updater.prepare_update(BASE,self.log,force)
-                self.jobs.put(('update_ready' if stage else 'update_none',stage))
+                release=updater.find_update(BASE,force)
+                self.jobs.put(('update_available',release) if release else ('update_none',force))
+            except Exception as e:self.jobs.put(('update_error',str(e)))
+        threading.Thread(target=worker,daemon=True).start()
+
+    def offer_update(self,release):
+        version=release['tag_name'].removeprefix('v')
+        message=('Жаңа нұсқа шықты: '+version+'\nҚазіргі нұсқа: '+updater.local_version(BASE)+
+                 '\n\nЖаңартайын ба?\n\n«Жоқ» таңдасаңыз, осы нұсқамен жұмысты жалғастырасыз.')
+        if self.busy:message+='\nЖаңарту ағымдағы жұмыс аяқталған соң орнатылады.'
+        if not messagebox.askyesno('Жаңа нұсқа шықты',message,parent=self):
+            self.log('Жаңарту кейінге қалдырылды: '+version)
+            return
+        self.update_checking=True
+        self.log('Жаңарту мақұлданды: '+version+'. Жүктелуде…')
+        def worker():
+            try:self.jobs.put(('update_ready',updater.download_update(BASE,release,self.log)))
             except Exception as e:self.jobs.put(('update_error',str(e)))
         threading.Thread(target=worker,daemon=True).start()
 
@@ -267,11 +282,15 @@ class App(tk.Tk):
                 kind,payload=self.jobs.get_nowait()
                 if kind.startswith('update_'):
                     self.update_checking=False
-                    if kind=='update_ready':
+                    if kind=='update_available':
+                        self.offer_update(payload)
+                    elif kind=='update_ready':
                         self.pending_update=payload
                         self.status.set('Жаңа нұсқа дайын. Жұмыс аяқталған соң жаңарып, бағдарлама қайта ашылады.')
                     elif kind=='update_error':self.log('Жаңартуды тексеру мүмкін болмады; ағымдағы нұсқа жұмыс істейді: '+payload)
-                    else:self.log('Жаңартуды тексеру аяқталды; жаңа нұсқа жоқ.')
+                    else:
+                        self.log('Жаңартуды тексеру аяқталды; жаңа нұсқа жоқ.')
+                        if payload:messagebox.showinfo('Жаңарту','Сізде соңғы нұсқа орнатылған: '+updater.local_version(BASE),parent=self)
                     continue
                 if kind=='project_source':
                     self.project_dir=payload['directory'];self.source_video=payload['video']

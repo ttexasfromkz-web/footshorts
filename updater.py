@@ -118,9 +118,9 @@ def validate_archive(path,manifest):
     return True
 
 
-def prepare_update(root,log=print,force=False):
+def find_update(root,force=False):
     root=Path(root).resolve()
-    if os.environ.get('FOOTSHORTS_SKIP_UPDATE')=='1':return None
+    if os.environ.get('FOOTSHORTS_SKIP_UPDATE')=='1' and not force:return None
     current=local_version(root)
     try:release=json.loads(fetch(API,1024*1024))
     except HTTPError as e:
@@ -137,6 +137,15 @@ def prepare_update(root,log=print,force=False):
         except (ValueError,TypeError):pass
     assets={a['name']:a for a in release.get('assets',[]) if isinstance(a,dict) and 'name' in a}
     if 'update.json' not in assets or ASSET not in assets:return None
+    return release
+
+
+def download_update(root,release,log=print):
+    root=Path(root).resolve()
+    tag=release['tag_name']
+    if not tag.startswith('v') or version_tuple(tag[1:])<=version_tuple(local_version(root)):
+        raise ValueError('Жаңартудың нұсқасы жарамсыз.')
+    assets={a['name']:a for a in release.get('assets',[]) if isinstance(a,dict) and 'name' in a}
     manifest=json.loads(fetch(release_url(assets['update.json']['browser_download_url'],tag),128*1024))
     validate_manifest(manifest,tag)
     if int(assets[ASSET].get('size',MAX_ZIP+1))>MAX_ZIP:raise ValueError('Пакет көлемі үлкен.')
@@ -150,10 +159,16 @@ def prepare_update(root,log=print,force=False):
         package=stage/'payload.zip';package.write_bytes(payload)
         validate_archive(package,manifest)
         atomic_json(stage/'update.json',manifest)
-        log('Жаңарту тексерілді. Ағымдағы жұмыс біткен соң орнатылады.')
+        log('Жаңарту жүктелді және тексерілді.')
         return str(stage)
     except BaseException:
         shutil.rmtree(stage,ignore_errors=True);raise
+
+
+def prepare_update(root,log=print,force=False):
+    # Compatibility for earlier callers; the GUI asks before download_update.
+    release=find_update(root,force)
+    return download_update(root,release,log) if release else None
 
 
 def process_alive(pid):
