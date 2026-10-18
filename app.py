@@ -37,7 +37,7 @@ class App(tk.Tk):
         self.jobs=queue.Queue();self.cancel_event=threading.Event();self.busy=False
         self.pending_update=None;self.update_checking=False;self.update_installing=False
         self.plan=None;self.source_url='';self.title_score='';self.source_video='';self.project_dir=None
-        self.video=tk.StringVar();self.music=tk.StringVar(value=str(BASE/'music/Stadium_Ignition.wav'))
+        self.video=tk.StringVar();self.music=tk.StringVar(value=str(BASE/('music/Stadium_Ignition.mp3' if (BASE/'music/Stadium_Ignition.mp3').is_file() else 'music/Stadium_Ignition.wav')))
         self.title_text=tk.StringVar(value='')
         self.youtube=tk.StringVar();self.quality=tk.StringVar(value='1080')
         self.replays=tk.BooleanVar(value=True);self.replay_speed=tk.StringVar(value='0.5')
