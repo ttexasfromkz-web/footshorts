@@ -97,7 +97,7 @@ class MaintenanceTests(unittest.TestCase):
     def test_visible_update_result_and_pipeline_widgets(self):
         with tempfile.TemporaryDirectory() as d,patch('app.BASE',Path(d)):
             Path(d,'version.json').write_text('{"version":"1.9.0"}')
-            ui=app.App()
+            ui=app.App(prompt_format=False)
             try:
                 ui.jobs.put(('update_none',False));ui.poll()
                 self.assertIn('1.9.0',ui.update_status.get())

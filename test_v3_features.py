@@ -122,7 +122,7 @@ class TrackingTests(unittest.TestCase):
 
 
 class ResumeTests(unittest.TestCase):
-    def analysis(self,*args):return dict(score='1:0',clips=[dict(start=0,end=2,reason='audio')],warnings=[])
+    def analysis(self,*args,**kwargs):return dict(score='1:0',clips=[dict(start=0,end=2,reason='audio')],warnings=[])
     def render(self,video,music,clips,output,**kwargs):Path(output).write_bytes(b'rendered')
 
     def test_cancel_after_source_resumes_without_download(self):

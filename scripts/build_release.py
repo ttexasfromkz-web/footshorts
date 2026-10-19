@@ -9,7 +9,7 @@ ROOT=Path(__file__).resolve().parent.parent
 sys.path.insert(0,str(ROOT))
 import updater
 
-FILES=['content_language.py','clip_timeline.py','channel_templates.py','channel_ui.py','branding.py','runtime_manager.py','highlight_signals.py','progress.py','retention.py','audio_worker.py','audio_process.py','review_model.py','playback.py','review_ui.py','batch_queue.py','batch_ui.py','logos.py','visuals.py','camera.py','app.py','core.py','downloader.py','publishing.py','timeline.py','workflow.py','updater.py','update_helper.py',
+FILES=['video_formats.py','content_language.py','clip_timeline.py','channel_templates.py','channel_ui.py','branding.py','runtime_manager.py','highlight_signals.py','progress.py','retention.py','audio_worker.py','audio_process.py','review_model.py','playback.py','review_ui.py','batch_queue.py','batch_ui.py','logos.py','visuals.py','camera.py','app.py','core.py','downloader.py','publishing.py','timeline.py','workflow.py','updater.py','update_helper.py',
        'bootstrap.py','version.json','requirements.txt','1_INSTALL.bat','2_START.bat','3_UPDATE_YOUTUBE.bat',
        'README_KZ.md','VALIDATION.md','README.md']
 

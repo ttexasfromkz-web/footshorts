@@ -215,7 +215,7 @@ def ocr_engine():
     return RapidOCR(intra_op_num_threads=2,inter_op_num_threads=1)
 
 
-def analyze(video, target=180, roi=(0,0,.5,.17), use_ocr=True, log=print, cancel=None):
+def analyze(video, target=180, roi=(0,0,.5,.17), use_ocr=True, log=print, cancel=None, output_format='shorts'):
     """Use score changes and crowd/commentary energy; not semantic goal recognition."""
     log('@progress:analyze:0:Видеоны талдау')
     info = metadata(video)
@@ -313,8 +313,8 @@ def analyze(video, target=180, roi=(0,0,.5,.17), use_ocr=True, log=print, cancel
     if removed:warnings.append(f'Өте ұқсас қайталанған сәттер алынып тасталды: {removed}.')
     detected_goals=[dict(c) for c in candidates if c.get('kind')=='goal']
     # Reserve a final score card and 0.1s for container/audio rounding.
-    limit=min(180.0,float(target))
-    if not math.isfinite(limit) or limit<4:raise ValueError('Уақыт шегі: 4–180 секунд.')
+    from video_formats import limit_seconds
+    limit=limit_seconds(target,output_format)
     clips=choose_clips(candidates,duration,limit-3.1)
     if not clips:
         warnings.append('Сәттер автоматты табылмады. Уақыттарды қолмен енгізіңіз.')
@@ -326,7 +326,7 @@ def analyze(video, target=180, roi=(0,0,.5,.17), use_ocr=True, log=print, cancel
                 score_events=events,warnings=warnings,ocr_readings=readings,duplicate_candidates_removed=removed,
                 detected_goals=detected_goals,ignored_score_states=ignored)
 
-def validate_clips(clips,duration):
+def validate_clips(clips,duration,output_format='shorts'):
     if not clips:
         raise ValueError('Кемінде бір үзінді таңдаңыз.')
     total=0
@@ -335,13 +335,14 @@ def validate_clips(clips,duration):
         if not math.isfinite(a+b) or a<0 or b>duration+.05 or b-a<.2:
             raise ValueError(f'Уақыт қате: {a} — {b}. Видео: {duration:.1f} секунд.')
         total+=b-a
-    if total>180:
+    from video_formats import normalize
+    if normalize(output_format)=='shorts' and total>180:
         raise ValueError('Жалпы ұзақтық 180 секундтан аспасын.')
     return total
 
-def make_card(path, title, score, label, final_card=False,style=None,language='kk'):
+def make_card(path, title, score, label, final_card=False,style=None,language='kk',output_format='shorts'):
     from visuals import card
-    card(path,title,score,label,final_card,style=style,language=language)
+    card(path,title,score,label,final_card,style=style,language=language,output_format=output_format)
 
 def make_goal_image(path):
     from visuals import goal_frame
@@ -349,22 +350,26 @@ def make_goal_image(path):
 
 
 def render(video,music,clips,output,title='',score='',music_level=.18,source_level=.20,
-           crop_top=.15,show_final=True,log=print,cancel=None,replays=True,replay_speed=.5,max_seconds=180,goal_animation=True,action_camera=False,intro=True,logo_dir=None,channel_style=None,language='kk'):
+           crop_top=.15,show_final=True,log=print,cancel=None,replays=True,replay_speed=.5,max_seconds=180,goal_animation=True,action_camera=False,intro=True,logo_dir=None,channel_style=None,language='kk',output_format='shorts'):
+    from video_formats import normalize,dimensions
+    output_format=normalize(output_format);wide=output_format=='landscape'
+    width,height=dimensions(output_format)
+    if wide:action_camera=False;crop_top=0
     from content_language import strings
     text=strings(language)
     from channel_templates import style as validate_style
     channel_style=validate_style(channel_style)
     info=metadata(video)
-    validate_clips(clips,info['duration'])
+    validate_clips(clips,info['duration'],output_format)
     from review_model import validate_camera
     for clip in clips:validate_camera(clip)
-    timeline=plan_timeline(clips,max_seconds,bool(score and show_final),replays,replay_speed,intro_seconds=3 if intro else 0)
+    timeline=plan_timeline(clips,max_seconds,bool(score and show_final),replays,replay_speed,intro_seconds=3 if intro else 0,output_format=output_format)
     clips=timeline['segments']
     total=timeline['duration']-(3 if score and show_final else 0)
     for note in timeline['notes']:log(note)
     if not 0<=crop_top<=.35:
         raise ValueError('Жоғарғы қию: 0–35%.')
-    if total+(3 if score and show_final else 0)>180:
+    if not wide and total+(3 if score and show_final else 0)>180:
         raise ValueError('Есеп кадрын қоса жалпы ұзақтық 180 секундтан аспасын.')
     if score and score!='?' and not re.fullmatch(r'\d{1,2}\s*[:\-]\s*\d{1,2}',score):
         raise ValueError('Есепті 1:3 түрінде жазыңыз немесе бос қалдырыңыз.')
@@ -382,7 +387,7 @@ def render(video,music,clips,output,title='',score='',music_level=.18,source_lev
             if cancel and cancel.is_set():raise Cancelled()
             log('@progress:logos:1:Логотиптер дайын')
             log('@progress:render:0:3 секундтық кіріспе')
-            base,left,right=intro_layers(tmp,title,badges,style=channel_style,language=language)
+            base,left,right=intro_layers(tmp,title,badges,style=channel_style,language=language,output_format=output_format)
             intro_part=tmp/'intro.mp4'
             log('3 секундтық матч кіріспесі…')
             intro_filter="[0:v][1:v]overlay=x='-720*pow(1-clip(t/0.75,0,1),3)':y=0[a];[a][2:v]overlay=x='720*pow(1-clip(t/0.75,0,1),3)':y=0,fade=t=in:d=0.12,fade=t=out:st=2.8:d=0.2,setsar=1,format=yuv420p[v]"
@@ -410,7 +415,7 @@ def render(video,music,clips,output,title='',score='',music_level=.18,source_lev
             part=tmp/f'{i:03}.mp4';card=tmp/f'{i:03}.png'
             is_replay=c.get('is_replay',False)
             speed=float(c.get('speed',1));out_duration=segment_duration(c)
-            make_card(card,title,'',f"{text['replay']} • {speed:g}×" if is_replay else text['highlights'].upper(),style=channel_style,language=language)
+            make_card(card,title,'',f"{text['replay']} • {speed:g}×" if is_replay else text['highlights'].upper(),style=channel_style,language=language,output_format=output_format)
             use_crop=action_camera
             if action_camera and not c.get('focus_points'):
                 import camera
@@ -420,7 +425,9 @@ def render(video,music,clips,output,title='',score='',music_level=.18,source_lev
                     tracking_cache[key]=camera.track_details(video,c['start'],c['end'],crop_top,cancel,c.get('goal_at'),c.get('zoom',1))
                 if not tracking_cache[key]['safe_crop']:
                     use_crop=False;log('Доп бағыты сенімсіз — осы үзіндіде толық алаң сақталды.')
-            if use_crop:
+            if wide:
+                vf=f'[0:v]setpts=(PTS-STARTPTS)/{speed},scale=1280:720:force_original_aspect_ratio=decrease,pad=1280:720:(ow-iw)/2:(oh-ih)/2:black,fps=30[v0];[v0][1:v]overlay=0:0,setsar=1,format=yuv420p[carded]'
+            elif use_crop:
                 import camera
                 _,_,_,portrait_w,portrait_h=camera.geometry(info['width'],info['height'],crop_top,c.get('zoom',1))
                 if c.get('focus_points'):
@@ -443,7 +450,8 @@ def render(video,music,clips,output,title='',score='',music_level=.18,source_lev
                 args+=['-framerate','30','-i',fire_pattern];audio_index=3
                 g=max(0,(c['goal_at']-c['start'])/speed)
                 vf=vf.rsplit(';[carded]null[v]',1)[0]
-                vf+=f";[2:v]format=rgba,fade=t=in:st=0:d=0.12:alpha=1,fade=t=out:st=1.8:d=0.4:alpha=1,setpts=PTS+{g}/TB[goal];[carded][goal]overlay=x=32:y='800+28*exp(-8*(t-{g}))*cos(18*(t-{g}))':enable='between(t,{g},{g+2.2})':eof_action=pass:repeatlast=0[v]"
+                goal_x=(width-656)//2;goal_y=height-380 if wide else 800
+                vf+=f";[2:v]format=rgba,fade=t=in:st=0:d=0.12:alpha=1,fade=t=out:st=1.8:d=0.4:alpha=1,setpts=PTS+{g}/TB[goal];[carded][goal]overlay=x={goal_x}:y='{goal_y}+28*exp(-8*(t-{g}))*cos(18*(t-{g}))':enable='between(t,{g},{g+2.2})':eof_action=pass:repeatlast=0[v]"
 
             if silent:
                 args+=['-f','lavfi','-i','anullsrc=r=48000:cl=stereo']
@@ -470,8 +478,8 @@ def render(video,music,clips,output,title='',score='',music_level=.18,source_lev
         if score and show_final:
             log('Соңғы есеп кадры…')
             card=tmp/'final.png';part=tmp/'final.mp4'
-            make_card(card,title,score,'',True,style=channel_style,language=language)
-            run([ffmpeg(),'-v','error','-f','lavfi','-i','color=c=0x'+channel_style['background_color'][1:]+':s=720x1280:r=30:d=3',
+            make_card(card,title,score,'',True,style=channel_style,language=language,output_format=output_format)
+            run([ffmpeg(),'-v','error','-f','lavfi','-i','color=c=0x'+channel_style['background_color'][1:]+f':s={width}x{height}:r=30:d=3',
                  '-i',card,'-f','lavfi','-i','anullsrc=r=48000:cl=stereo','-filter_complex',
                  '[0:v][1:v]overlay=0:0,setsar=1,format=yuv420p[v]','-map','[v]','-map','2:a',
                  '-t','3','-c:v','libx264','-preset','fast','-crf','21','-threads','2',
@@ -490,7 +498,7 @@ def render(video,music,clips,output,title='',score='',music_level=.18,source_lev
                    '-map','0:v','-map','[a]','-c:v','copy','-c:a','aac','-b:a','192k']
         else:
             args+=['-map','0:v','-map','0:a','-c','copy']
-        args+=['-t',min(total,179.9),'-movflags','+faststart','-y',mixed]
+        args+=['-t',total if wide else min(total,179.9),'-movflags','+faststart','-y',mixed]
         run(args,cancel,progress=lambda fraction:log(f'@progress:save:{fraction*.5}:Музыка және видео'),duration=total)
         log('@progress:save:0.5:Дайын видеоны толық тексеру')
         result_info=metadata(mixed)

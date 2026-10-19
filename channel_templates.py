@@ -8,7 +8,7 @@ import uuid
 from PIL import Image,ImageFont
 import updater
 
-SETTING_KEYS={'target','roi','use_ocr','music_level','source_level','crop_top','replays','replay_speed','action_camera','intro','show_final','quality','language'}
+SETTING_KEYS={'target','roi','use_ocr','music_level','source_level','crop_top','replays','replay_speed','action_camera','intro','show_final','quality','language','output_format'}
 STYLE_DEFAULTS=dict(brand_name='',brand_logo='',font_file='',font_name='Стандарт',accent_color='#dcb56b',text_color='#102336',panel_color='#fafafa',background_color='#081a20')
 
 

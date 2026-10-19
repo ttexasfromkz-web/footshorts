@@ -32,7 +32,7 @@ def seconds(s):
     return v
 
 class App(tk.Tk):
-    def __init__(self):
+    def __init__(self,prompt_format=True):
         super().__init__()
         import branding
         self.brand_icon=tk.PhotoImage(data=branding.PNG)
@@ -54,6 +54,9 @@ class App(tk.Tk):
         self.intro=tk.BooleanVar(value=True)
         self.show_final=tk.BooleanVar(value=True)
         self.channel_style={}
+        self.output_format=tk.StringVar(value='Шортс — 9:16')
+        self.format_hint=tk.StringVar(value='Компьютерде өңдеу • Соңғы есепті тексеру • 9:16 MP4')
+        self.format_dialog=None
         self.action_camera=tk.BooleanVar(value=False)
         self.replays=tk.BooleanVar(value=True);self.replay_speed=tk.StringVar(value='0.5')
         self.score=tk.StringVar();self.target=tk.StringVar(value='180')
@@ -87,7 +90,7 @@ class App(tk.Tk):
         ttk.Label(brand,image=self.brand_small).pack(side='left',padx=(0,8))
         ttk.Label(brand,text='FOOTBALL SHORTS',font=('Segoe UI',19,'bold')).pack(side='left')
         ttk.Button(brand,text='Арна шаблондары…',command=self.open_channel_templates).pack(side='right')
-        ttk.Label(frame,text='Компьютерде өңдеу • Соңғы есепті тексеру • 9:16 MP4',font=('Segoe UI',10)).pack(anchor='w',pady=(0,5))
+        ttk.Label(frame,textvariable=self.format_hint,font=('Segoe UI',10)).pack(anchor='w',pady=(0,5))
         yt=ttk.LabelFrame(frame,text='Сілтемені қойыңыз → бір батырмамен дайын MP4 + TXT',padding=6);yt.pack(fill='x',pady=(0,5))
         ttk.Entry(yt,textvariable=self.youtube).pack(side='left',fill='x',expand=True)
         ttk.Combobox(yt,textvariable=self.quality,values=['720','1080'],width=5,state='readonly').pack(side='left',padx=5)
@@ -122,8 +125,13 @@ class App(tk.Tk):
         row=ttk.Frame(frame);row.pack(fill='x',pady=3)
         ttk.Label(row,text='Матч атауы',width=19).pack(side='left')
         ttk.Entry(row,textvariable=self.title_text,width=30).pack(side='left',fill='x',expand=True)
-        ttk.Label(row,text='Ең ұзақ, сек:').pack(side='left',padx=(12,4))
-        ttk.Combobox(row,textvariable=self.target,values=['60','90','120','180'],width=5,state='readonly').pack(side='left')
+        from video_formats import FORMATS
+        ttk.Label(row,text='Формат:').pack(side='left',padx=(8,4))
+        self.format_combo=ttk.Combobox(row,textvariable=self.output_format,values=list(FORMATS),width=23,state='readonly')
+        self.format_combo.pack(side='left');self.format_combo.bind('<<ComboboxSelected>>',lambda _:self.set_output_format(self.output_format.get(),user_change=True))
+        self.target_label=ttk.Label(row,text='Ең ұзақ, сек:');self.target_label.pack(side='left',padx=(10,4))
+        self.target_combo=ttk.Combobox(row,textvariable=self.target,values=['60','90','120','180'],width=10,state='readonly')
+        self.target_combo.pack(side='left')
         self.option_columns=ttk.Frame(frame);self.option_columns.pack(fill='x',pady=3)
         self.analysis_panel=ttk.LabelFrame(self.option_columns,text='Талдау және дыбыс',padding=6)
         self.visual_panel=ttk.LabelFrame(self.option_columns,text='Көрініс және кіріспе',padding=6)
@@ -149,7 +157,7 @@ class App(tk.Tk):
         self.zoom_btn=ttk.Radiobutton(r,text='Зуммен — ойынды қадағалау',variable=self.action_camera,value=True)
         self.zoom_btn.pack(side='left')
         ttk.Label(r,text='Жоғарыдан қию %').pack(side='left',padx=(8,4))
-        ttk.Spinbox(r,from_=0,to=35,textvariable=self.crop,width=5).pack(side='left')
+        self.crop_spin=ttk.Spinbox(r,from_=0,to=35,textvariable=self.crop,width=5);self.crop_spin.pack(side='left')
         ttk.Checkbutton(opt,text='3 секундтық кіріспе: логотиптер мен атаулар',variable=self.intro).pack(anchor='w',pady=2)
         r=ttk.Frame(opt);r.pack(fill='x',pady=2)
         from content_language import LANGUAGES
@@ -201,6 +209,44 @@ class App(tk.Tk):
         self.after(200,self.check_updates)
         self.after(1500,self.cleanup_projects)
         self.after(500,self.refresh_progress)
+        if prompt_format:self.after(300,self.choose_startup_format)
+
+    def choose_startup_format(self):
+        if self.busy or self.update_installing:
+            self.after(500,self.choose_startup_format);return
+        if self.format_dialog and self.format_dialog.winfo_exists():return
+        from video_formats import show_format_dialog
+        self.format_dialog=show_format_dialog(self)
+
+    def is_shorts(self):
+        from video_formats import normalize
+        return normalize(self.output_format.get())=='shorts'
+
+    def target_value(self):
+        from video_formats import LONG_LIMITS,limit_seconds
+        value=LONG_LIMITS[self.target.get()] if self.target.get() in LONG_LIMITS else float(self.target.get())
+        limit_seconds(value,self.output_format.get())
+        return value
+
+    def set_output_format(self,value,user_change=False):
+        from video_formats import normalize,label,LONG_LIMITS
+        code=normalize(value);old=getattr(self,'_output_format_code','shorts')
+        self.output_format.set(label(code));self._output_format_code=code
+        wide=code=='landscape'
+        self.target_combo.configure(values=list(LONG_LIMITS) if wide else ['60','90','120','180'])
+        self.target_label.configure(text='Ең ұзақ:' if wide else 'Ең ұзақ, сек:')
+        if user_change and old!=code:self.target.set('5 минут' if wide else '180')
+        if wide:self.action_camera.set(False)
+        self.zoom_btn.configure(state='disabled' if wide else 'normal')
+        self.crop_spin.configure(state='disabled' if wide else 'normal')
+        self.format_hint.set('Компьютерде өңдеу • Соңғы есепті тексеру • '+('16:9 MP4' if wide else '9:16 MP4'))
+        self.download_btn.configure(text='ВИДЕО ЖАСАУ' if wide else 'ШОРТС ЖАСАУ')
+
+    def restore_output_settings(self,settings):
+        from video_formats import LONG_LIMITS
+        self.set_output_format(settings.get('output_format','shorts'))
+        value=settings.get('target',300 if not self.is_shorts() else 180)
+        self.target.set(next((label for label,seconds in LONG_LIMITS.items() if seconds==value),str(value)) if not self.is_shorts() else str(value))
 
     def confirm_startup(self):
         try:updater.mark_healthy(BASE)
@@ -271,7 +317,7 @@ class App(tk.Tk):
             for key,var in [('youtube',self.youtube),('video',self.video),('music',self.music),('title',self.title_text),('score',self.score)]:
                 if key in state:var.set(state[key])
             if 'editor' in state:self.editor.delete('1.0','end');self.editor.insert('1.0',state['editor'])
-            self.target.set(str(settings.get('target',180)));self.quality.set(str(settings.get('quality',1080)))
+            self.restore_output_settings(settings);self.quality.set(str(settings.get('quality',1080)))
             self.youtube_cookie_file.set(settings.get('youtube_cookie_file',''))
             self.youtube_login.set('Chrome' if settings.get('youtube_browser')=='chrome' else 'Cookies файлы' if settings.get('youtube_cookie_file') else 'Аккаунтсыз')
             if self.youtube_cookie_file.get():self.cookie_label.set(Path(self.youtube_cookie_file.get()).name)
@@ -282,7 +328,7 @@ class App(tk.Tk):
             self.intro.set(settings.get('intro',True))
             self.show_final.set(settings.get('show_final',True))
             self.channel_style=settings.get('channel_style',{})
-            self.action_camera.set(settings.get('action_camera',False))
+            self.action_camera.set(settings.get('action_camera',False) and self.is_shorts())
             self.use_ocr.set(settings.get('use_ocr',True));self.replays.set(settings.get('replays',True));self.replay_speed.set(str(settings.get('replay_speed',.5)))
         except Exception as e:self.log('Баптауларды қалпына келтіру: '+str(e))
 
@@ -337,6 +383,7 @@ class App(tk.Tk):
 
     def settings(self,validate_auth=True):
         from content_language import normalize
+        from video_formats import normalize as normalize_format
         roi=tuple(float(x.strip())/100 for x in self.roi.get().split(','))
         if len(roi)!=4 or any(v<0 for v in roi) or roi[2]<=0 or roi[3]<=0 or roi[0]+roi[2]>1 or roi[1]+roi[3]>1:
             raise ValueError('Есеп аймағы: 0, 0, 50, 17 сияқты пайызбен жазыңыз.')
@@ -344,8 +391,8 @@ class App(tk.Tk):
         if not 0<=mv<=1 or not 0<=sv<=1 or not 0<=crop<=.35:raise ValueError('Дыбыс: 0–100%, қию: 0–35%.')
         cookie_file=self.youtube_cookie_file.get() if self.youtube_login.get()=='Cookies файлы' else ''
         if validate_auth and self.youtube_login.get()=='Cookies файлы' and not cookie_file:raise ValueError('Cookies файлын таңдаңыз.')
-        return dict(language=normalize(self.language.get()),youtube_browser='chrome' if self.youtube_login.get()=='Chrome' else '',youtube_cookie_file=cookie_file,
-                    target=int(self.target.get()),quality=int(self.quality.get()),roi=roi,use_ocr=self.use_ocr.get(),
+        return dict(output_format=normalize_format(self.output_format.get()),language=normalize(self.language.get()),youtube_browser='chrome' if self.youtube_login.get()=='Chrome' else '',youtube_cookie_file=cookie_file,
+                    target=self.target_value(),quality=int(self.quality.get()),roi=roi,use_ocr=self.use_ocr.get(),
                     music_level=mv,source_level=sv,crop_top=crop,replays=self.replays.get(),replay_speed=float(self.replay_speed.get()),action_camera=self.action_camera.get(),intro=self.intro.get(),show_final=self.show_final.get(),channel_style=dict(self.channel_style))
 
     def open_channel_templates(self):
@@ -355,12 +402,12 @@ class App(tk.Tk):
     def apply_channel_settings(self,settings):
         from content_language import label
         self.language.set(label(settings.get('language','kk')))
-        self.target.set(str(settings.get('target',180)));self.quality.set(str(settings.get('quality',1080)))
+        self.restore_output_settings(settings);self.quality.set(str(settings.get('quality',1080)))
         self.roi.set(', '.join(str(v*100) for v in settings.get('roi',[0,0,.5,.17])))
         self.crop.set(str(settings.get('crop_top',.15)*100))
         self.music_volume.set(round(settings.get('music_level',.18)*100));self.source_volume.set(round(settings.get('source_level',.2)*100))
         self.use_ocr.set(settings.get('use_ocr',True));self.replays.set(settings.get('replays',True));self.replay_speed.set(str(settings.get('replay_speed',.5)))
-        self.intro.set(settings.get('intro',True));self.show_final.set(settings.get('show_final',True));self.action_camera.set(settings.get('action_camera',False))
+        self.intro.set(settings.get('intro',True));self.show_final.set(settings.get('show_final',True));self.action_camera.set(settings.get('action_camera',False) and self.is_shorts())
         self.channel_style=dict(settings.get('channel_style',{}))
 
     def refresh_projects(self):
@@ -401,7 +448,7 @@ class App(tk.Tk):
     def review_saved(self,project,render):
         try:
             settings={**workflow.DEFAULTS,**project.get('settings',{})}
-            self.action_camera.set(settings['action_camera'])
+            self.action_camera.set(settings['action_camera'] and self.is_shorts())
             self.project_ready(workflow.output_files(project))
             if render:
                 path=project['directory']
@@ -420,10 +467,10 @@ class App(tk.Tk):
 
     def open_project_path(self,path):
         p=workflow.load_project(path);settings={**workflow.DEFAULTS,**p.get('settings',{})}
-        self.target.set(str(settings['target']));self.crop.set(str(settings['crop_top']*100))
+        self.restore_output_settings(settings);self.crop.set(str(settings['crop_top']*100))
         self.music_volume.set(round(settings['music_level']*100));self.source_volume.set(round(settings['source_level']*100))
         self.roi.set(', '.join(str(x*100) for x in settings['roi']))
-        self.show_final.set(settings['show_final']);self.intro.set(settings['intro']);self.action_camera.set(settings['action_camera'])
+        self.show_final.set(settings['show_final']);self.intro.set(settings['intro']);self.action_camera.set(settings['action_camera'] and self.is_shorts())
         self.channel_style=workflow.project_style(p)
         self.replays.set(settings['replays']);self.replay_speed.set(str(settings['replay_speed']));self.use_ocr.set(settings['use_ocr'])
         self.project_ready(workflow.output_files(p))
@@ -443,6 +490,7 @@ class App(tk.Tk):
     def project_ready(self,result):
         from content_language import label
         self.language.set(label(result['project'].get('settings',{}).get('language','kk')))
+        self.restore_output_settings(result['project'].get('settings',{}))
         p=result['project'];self.project_dir=p['directory'];self.source_url=p.get('source_url','')
         self.source_video=str(workflow.media_path(p,p['source_file']));self.video.set(self.source_video)
         self.title_text.set(p['title']);self.title_score=p.get('title_score') or ''
@@ -544,7 +592,9 @@ class App(tk.Tk):
 
     def analyze(self):
         try:
-            video=self.video.get();target=max(4,int(self.target.get())-(3 if self.intro.get() else 0))
+            video=self.video.get();settings=self.settings()
+            from video_formats import analysis_target
+            target=analysis_target(settings);output_format=settings['output_format']
             if str(Path(video).resolve())!=str(Path(self.source_video or '.').resolve()):
                 self.source_url='';self.title_score=''
             if not Path(video).is_file():raise ValueError('Видеоны таңдаңыз.')
@@ -553,7 +603,7 @@ class App(tk.Tk):
                 raise ValueError('Есеп аймағы: 0, 0, 50, 17 сияқты пайызбен жазыңыз.')
             ocr=self.use_ocr.get()
             self.score_verified.set(False)
-            self.start(lambda:core.analyze(video,target,roi,ocr,self.log,self.cancel_event),self.analyzed)
+            self.start(lambda:core.analyze(video,target,roi,ocr,self.log,self.cancel_event,output_format=output_format),self.analyzed)
         except Exception as e:messagebox.showerror('Қате',str(e))
 
     def analyzed(self,p):
@@ -563,7 +613,7 @@ class App(tk.Tk):
         self.editor.insert('1.0','\n'.join(f"{timestamp(c['start'])} - {timestamp(c['end'])} | {c['reason']}"+(f" | goal={timestamp(c['goal_at'])}" if c.get('goal_at') is not None else '') for c in p['clips']))
         for warning in p['warnings']:self.log(warning)
         try:
-            timeline=plan_timeline(p['clips'],int(self.target.get()),self.show_final.get(),self.replays.get(),float(self.replay_speed.get()),intro_seconds=3 if self.intro.get() else 0)
+            timeline=plan_timeline(p['clips'],self.target_value(),self.show_final.get(),self.replays.get(),float(self.replay_speed.get()),intro_seconds=3 if self.intro.get() else 0,output_format=self.settings()['output_format'])
             self.status.set(f"Жалпы ұзақтығы: {timeline['duration']:.1f} сек. goal= уақытын тексеріңіз.")
         except ValueError as e:self.status.set(str(e))
 
@@ -598,16 +648,16 @@ class App(tk.Tk):
         if self.busy:return
         try:
             line=self.editor.get('insert linestart','insert lineend');clips=self.parse(line)
-            core.validate_clips(clips,core.metadata(self.video.get())['duration'])
+            core.validate_clips(clips,core.metadata(self.video.get())['duration'],self.settings()['output_format'])
             c=clips[0];video=self.video.get()
             crop=float(self.crop.get())/100;replay=self.replays.get();speed=float(self.replay_speed.get());action_camera=self.action_camera.get()
             from content_language import normalize
-            language=normalize(self.language.get())
+            language=normalize(self.language.get());output_format=self.settings()['output_format']
             title=self.title_text.get()
             fd,p=tempfile.mkstemp(prefix='football-preview-',suffix='.mp4');os.close(fd)
             def job():
                 core.render(video,None,[c],p,title=title,score='',show_final=False,crop_top=crop,
-                            replays=replay,replay_speed=speed,action_camera=action_camera,intro=False,language=language,log=self.log,cancel=self.cancel_event)
+                            replays=replay,replay_speed=speed,action_camera=action_camera,intro=False,language=language,output_format=output_format,max_seconds=None if output_format=='landscape' else 180,log=self.log,cancel=self.cancel_event)
                 return p
             def opened(p):
                 if os.name=='nt':os.startfile(p)
@@ -632,12 +682,12 @@ class App(tk.Tk):
             path=next((p for p in self.project_paths if p.name==name),None)
             if not path:raise ValueError('Жобалар тізімінен біреуін таңдаңыз.')
             p=workflow.load_project(path);settings={**workflow.DEFAULTS,**p.get('settings',{})}
-            self.target.set(str(settings['target']));self.crop.set(str(settings['crop_top']*100))
+            self.restore_output_settings(settings);self.crop.set(str(settings['crop_top']*100))
             self.music_volume.set(round(settings['music_level']*100));self.source_volume.set(round(settings['source_level']*100))
             self.roi.set(', '.join(str(x*100) for x in settings['roi']))
             self.show_final.set(settings['show_final']);self.intro.set(settings['intro'])
             self.channel_style=workflow.project_style(p)
-            self.action_camera.set(settings['action_camera'])
+            self.action_camera.set(settings['action_camera'] and self.is_shorts())
             self.replays.set(settings['replays']);self.replay_speed.set(str(settings['replay_speed']));self.use_ocr.set(settings['use_ocr'])
             self.project_ready(workflow.output_files(p))
         except Exception as e:messagebox.showerror('Қате',str(e))

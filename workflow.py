@@ -13,7 +13,7 @@ import downloader
 import publishing
 
 DEFAULTS=dict(target=180,roi=[0,0,.5,.17],use_ocr=True,music_level=.18,
-              source_level=.2,crop_top=.15,replays=True,replay_speed=.5,action_camera=False,intro=True,show_final=True,language='kk')
+              source_level=.2,crop_top=.15,replays=True,replay_speed=.5,action_camera=False,intro=True,show_final=True,language='kk',output_format='shorts')
 
 
 def stage_style(project):
@@ -88,10 +88,11 @@ def project_text(project):
     music=project.get('music_title') or Path(project.get('music_file','')).stem
     from content_language import strings
     language=project.get('settings',{}).get('language','kk');t=strings(language)
+    output_format=project.get('settings',{}).get('output_format','shorts')
     if parsed:
-        text=publishing.youtube_text(parsed['team_a'],parsed['team_b'],score,project.get('source_url',''),music,language)
+        text=publishing.youtube_text(parsed['team_a'],parsed['team_b'],score,project.get('source_url',''),music,language,output_format=output_format)
     else:
-        text=publishing.youtube_copy(project['title'],score,project.get('source_url',''),music,language)
+        text=publishing.youtube_copy(project['title'],score,project.get('source_url',''),music,language,output_format=output_format)
     if not parsed or not project.get('score'):
         text+='\n'+t['review']+'\n'
         if not parsed:text+=t['unknown_teams']+'\n'
@@ -171,7 +172,7 @@ def render_project(project,log=print,cancel=None):
                 music_level=settings['music_level'],source_level=settings['source_level'],
                 crop_top=settings['crop_top'],replays=settings['replays'],replay_speed=settings['replay_speed'],
                 max_seconds=settings['target'],action_camera=settings['action_camera'],intro=settings['intro'],
-                show_final=settings['show_final'],language=settings['language'],channel_style=project_style(project),logo_dir=folder/'source/logos',log=log,cancel=cancel)
+                show_final=settings['show_final'],output_format=settings['output_format'],language=settings['language'],channel_style=project_style(project),logo_dir=folder/'source/logos',log=log,cancel=cancel)
             temp_manifest=cache/'render.tmp';temp_manifest.write_text(json.dumps({'signature':signature}));os.replace(temp_manifest,manifest)
         project['checkpoint']='render';save_project(project)
         log('@progress:save:0.8:YouTube мәтіні мен видеоны сақтау')
@@ -191,7 +192,11 @@ def checkpoint(project,stage,callback=None):
 
 
 def create_project(base,url='',local_video='',music='',settings=None,title_hint='',log=print,cancel=None,on_source=None,on_checkpoint=None):
-    settings={**DEFAULTS,**(settings or {})}
+    from video_formats import normalize,limit_seconds
+    supplied=settings or {};settings={**DEFAULTS,**supplied}
+    settings['output_format']=normalize(settings['output_format'])
+    if settings['output_format']=='landscape' and 'target' not in supplied:settings['target']=300
+    limit_seconds(settings['target'],settings['output_format'])
     if not url and not Path(local_video).is_file():raise ValueError('YouTube сілтемесін немесе видео файлын беріңіз.')
     if url:url=downloader.normalize_url(url)
     root=Path(base).resolve()/'output';root.mkdir(parents=True,exist_ok=True)
@@ -276,7 +281,8 @@ def continue_project(p,log=print,cancel=None,on_source=None,on_checkpoint=None):
         if not p.get('analysis_ready'):
             log('@progress:analyze:0:Есеп пен қызықты сәттерді анықтау')
             p['status']='analyzing';save_project(p)
-            analysis=core.analyze(str(media_path(p,p['source_file'])),max(4,settings['target']-(3 if settings['intro'] else 0)),tuple(settings['roi']),settings['use_ocr'],log,cancel)
+            from video_formats import analysis_target
+            analysis=core.analyze(str(media_path(p,p['source_file'])),analysis_target(settings),tuple(settings['roi']),settings['use_ocr'],log,cancel,output_format=settings['output_format'])
             p['analysis']=analysis;p['clips']=analysis['clips'];p['warnings']=analysis.get('warnings',[])
             p['score']=analysis.get('score') or p.get('title_score')
             p['score_source']='video' if analysis.get('score') else ('title' if p.get('title_score') else 'unknown')

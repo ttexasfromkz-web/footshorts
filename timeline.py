@@ -12,9 +12,9 @@ def segment_duration(c):
     if not math.isfinite(raw) or raw<=0:raise ValueError('Үзінді уақыты қате.')
     return math.ceil(raw*30-1e-7)/30
 
-def plan_timeline(clips,limit=180,score_card=True,replays=True,replay_speed=.5,intro_seconds=0):
-    limit=float(limit)
-    if not math.isfinite(limit) or not 4<=limit<=180:raise ValueError('Уақыт шегі: 4–180 секунд.')
+def plan_timeline(clips,limit=180,score_card=True,replays=True,replay_speed=.5,intro_seconds=0,output_format='shorts'):
+    from video_formats import limit_seconds
+    limit=limit_seconds(limit,output_format)
     if not .5<=float(replay_speed)<=1:raise ValueError('Қайталау жылдамдығы: 0.5–1.0.')
     intro_seconds=float(intro_seconds)
     if intro_seconds not in (0,3):raise ValueError('Кіріспе: 0 немесе 3 секунд.')

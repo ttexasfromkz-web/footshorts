@@ -12,7 +12,7 @@ class WorkflowTests(unittest.TestCase):
     def fake_download(self,url,directory,*args):
         p=Path(directory)/'download.mp4';p.write_bytes(b'source')
         return dict(path=str(p),title='Ақтөбе 1-0 Ордабасы | Highlights',url=url)
-    def fake_analyze(self,*args):
+    def fake_analyze(self,*args,**kwargs):
         return dict(score='1:3',clips=[dict(start=0,end=2,kind='goal',goal_at=1,reason='goal')],warnings=[])
     def fake_render(self,video,music,clips,output,**opts):Path(output).write_bytes(opts['score'].encode())
 
@@ -68,7 +68,7 @@ class WorkflowTests(unittest.TestCase):
 
     def test_source_title_is_available_before_analysis_finishes(self):
         updates=[]
-        def analyze(*args):
+        def analyze(*args,**kwargs):
             self.assertEqual(len(updates),1)
             self.assertIn('Ақтөбе',updates[0]['title'])
             self.assertTrue(Path(updates[0]['video']).is_file())
@@ -90,7 +90,7 @@ class WorkflowTests(unittest.TestCase):
     def test_unknown_score_is_not_zero_zero(self):
         def download(url,directory,*args):
             p=Path(directory)/'v.mp4';p.write_bytes(b'src');return dict(path=str(p),title='Unidentified match',url=url)
-        def analyze(*args):return dict(score=None,clips=[dict(start=0,end=2,reason='audio')],warnings=[])
+        def analyze(*args,**kwargs):return dict(score=None,clips=[dict(start=0,end=2,reason='audio')],warnings=[])
         with tempfile.TemporaryDirectory() as d,patch('workflow.downloader.download',download),patch('workflow.core.analyze',analyze),patch('workflow.core.render',side_effect=self.fake_render):
             r=workflow.create_project(d,'https://youtu.be/so5hJv_2cVQ',log=lambda _:None)
             self.assertEqual(Path(r['video']).read_bytes(),b'?')

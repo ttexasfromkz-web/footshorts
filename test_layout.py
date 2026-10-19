@@ -9,11 +9,33 @@ import app
 
 @unittest.skipUnless(os.environ.get('FOOTSHORTS_GUI_TESTS')=='1','Tk layout integration')
 class CompactLayoutTests(unittest.TestCase):
+    def test_startup_format_choice_and_unlimited_setting_persist(self):
+        with tempfile.TemporaryDirectory() as d,patch('app.BASE',Path(d)),patch.object(app.App,'check_updates'),patch('updater.mark_healthy'):
+            ui=app.App(prompt_format=False)
+            try:
+                ui.update();ui.choose_startup_format();dialog=ui.format_dialog
+                self.assertTrue(dialog.winfo_exists());dialog.landscape_button.invoke();ui.update()
+                self.assertEqual(ui.settings()['output_format'],'landscape')
+                self.assertEqual(ui.settings()['target'],300)
+                self.assertEqual(str(ui.zoom_btn['state']),'disabled')
+                ui.target.set('Шектеусіз');ui.save_state()
+                ui.set_output_format('shorts',user_change=True)
+                self.assertEqual(ui.settings()['target'],180)
+                ui.restore_state();self.assertEqual(ui.settings()['output_format'],'landscape')
+                self.assertIsNone(ui.settings()['target'])
+                ui.choose_startup_format();ui.format_dialog.shorts_button.invoke()
+                self.assertEqual(ui.settings()['output_format'],'shorts')
+                self.assertEqual(ui.settings()['target'],180)
+                self.assertEqual(str(ui.zoom_btn['state']),'normal')
+            finally:
+                for ident in ui.tk.call('after','info'):ui.after_cancel(ident)
+                ui.destroy()
+
     def test_channel_template_apply_keeps_login_and_restores_video_settings(self):
         from channel_ui import ChannelWindow
         with tempfile.TemporaryDirectory() as d,patch('app.BASE',Path(d)),patch.object(app.App,'check_updates'),patch('updater.mark_healthy'):
             Path(d,'version.json').write_text('{"version":"3.0.0"}')
-            ui=app.App();window=None
+            ui=app.App(prompt_format=False);window=None
             try:
                 ui.music.set('');ui.youtube_login.set('Chrome');ui.intro.set(False);ui.show_final.set(False);ui.language.set('English')
                 window=ChannelWindow(ui);window.name.set('ExampleChannel');window.values['accent_color'].set('#00ff00');window.save()
@@ -49,7 +71,7 @@ class CompactLayoutTests(unittest.TestCase):
     def test_wide_columns_and_narrow_scroll_keep_score_reachable(self):
         with tempfile.TemporaryDirectory() as d,patch('app.BASE',Path(d)),patch.object(app.App,'check_updates'),patch('updater.mark_healthy'):
             Path(d,'version.json').write_text('{"version":"1.9.2"}')
-            ui=app.App()
+            ui=app.App(prompt_format=False)
             try:
                 ui.geometry('1600x900');ui.update()
                 self.assertEqual(ui.youtube_login.get(),'Аккаунтсыз')

@@ -30,12 +30,13 @@ def validate_camera(clip):
 
 
 class ReviewModel:
-    def __init__(self,clips,duration):
+    def __init__(self,clips,duration,output_format='shorts'):
+        self.output_format=output_format
         self.clips=copy.deepcopy(clips);self.duration=float(duration);self.history=[]
 
     def change(self,index,fn):
         candidate=copy.deepcopy(self.clips[index]);fn(candidate)
-        core.validate_clips([candidate],self.duration);validate_camera(candidate)
+        core.validate_clips([candidate],self.duration,self.output_format);validate_camera(candidate)
         g=candidate.get('goal_at')
         if g is not None and not candidate['start']<=float(g)<candidate['end']:
             raise ValueError('Гол белгісі шекарадан тыс қалды. Алдымен гол белгісін түзетіңіз.')
@@ -84,6 +85,6 @@ class ReviewModel:
         if self.history:self.clips=self.history.pop()
 
     def validate(self):
-        core.validate_clips(self.clips,self.duration)
+        core.validate_clips(self.clips,self.duration,self.output_format)
         for c in self.clips:validate_camera(c)
         return copy.deepcopy(self.clips)

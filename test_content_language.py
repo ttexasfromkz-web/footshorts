@@ -20,7 +20,7 @@ class ContentLanguageTests(unittest.TestCase):
                 self.assertTrue(text.startswith(heading+'\n'))
                 self.assertIn(score+': 2:1',text)
                 self.assertIn(language.strings(code)['highlights'],text)
-                self.assertIn(language.strings(code)['music']+': Music',text)
+                self.assertNotIn('Music',text);self.assertNotIn('https://example.com/video',text)
                 self.assertIn('North FC — South FC',text)
                 self.assertLessEqual(len(text.splitlines()[1]),100)
                 self.assertLessEqual(len(text.split(language.strings(code)['tags']+'\n')[1].strip()),500)

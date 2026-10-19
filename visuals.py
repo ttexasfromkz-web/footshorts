@@ -28,17 +28,19 @@ def centered(draw,text,box,size,fill,font_path=None):
 
 
 def brand_mark(im,style):
-    x=38
+    x=38;y=im.height-100
     if style.get('brand_logo'):
         with Image.open(style['brand_logo']) as logo:
-            logo=logo.convert('RGBA');logo.thumbnail((60,60));im.alpha_composite(logo,(38,1180))
+            logo=logo.convert('RGBA');logo.thumbnail((60,60));im.alpha_composite(logo,(38,y))
         x=112
     if style.get('brand_name'):
         d=ImageDraw.Draw(im)
-        centered(d,style['brand_name'],(x,1180,680-x,60),24,style['accent_color'],font_path=style.get('font_file') or None)
+        centered(d,style['brand_name'],(x,y,im.width-40-x,60),24,style['accent_color'],font_path=style.get('font_file') or None)
 
 
-def card(path,title,score='',label='',final=False,style=None,language='kk'):
+def card(path,title,score='',label='',final=False,style=None,language='kk',output_format='shorts'):
+    from video_formats import normalize
+    if normalize(output_format)=='landscape':return landscape_card(path,title,score,label,final,style,language)
     t=strings(language)
     from channel_templates import style as validate_style
     from functools import partial
@@ -117,7 +119,9 @@ def goal_sequence(folder,cancel=None,language='kk'):
     return folder/'%03d.png'
 
 
-def intro_layers(folder,title,logos,style=None,language='kk'):
+def intro_layers(folder,title,logos,style=None,language='kk',output_format='shorts'):
+    from video_formats import normalize
+    if normalize(output_format)=='landscape':return landscape_intro(folder,title,logos,style,language)
     t=strings(language)
     from channel_templates import style as validate_style
     from functools import partial
@@ -170,4 +174,62 @@ def intro_layers(folder,title,logos,style=None,language='kk'):
         for j,line in enumerate(lines):put(ld,line,(x+16,643+j*37,248,39),27,style['text_color'])
         ld.rounded_rectangle((x+92,727,x+188,731),2,fill=style['accent_color'])
         path=folder/('intro-'+str(index)+'.png');layer.save(path);paths.append(path)
+    return base,*paths
+
+
+def landscape_card(path,title,score='',label='',final=False,style=None,language='kk'):
+    from channel_templates import style as validate_style
+    from functools import partial
+    style=validate_style(style);t=strings(language);put=partial(centered,font_path=style['font_file'] or None)
+    im=Image.new('RGBA',(1280,720));d=ImageDraw.Draw(im)
+    d.rounded_rectangle((40,25,1240,110),20,fill=style['panel_color'],outline=style['accent_color'],width=3)
+    pair=parse_match_title(title)
+    if pair:
+        put(d,pair['team_a'].upper(),(65,35,470,60),28,style['text_color'])
+        put(d,pair['team_b'].upper(),(745,35,470,60),28,style['text_color'])
+        d.rounded_rectangle((550,26,730,109),18,fill='#0d2032',outline=style['accent_color'],width=2)
+        put(d,score if final else 'VS',(560,38,160,55),36,'white')
+    else:put(d,title or t['football_highlights'].upper(),(65,35,1150,60),30,style['text_color'])
+    if final:
+        put(d,t['final'] if score!='?' else t['unknown_final'],(140,240,1000,60),34,style['accent_color'])
+        put(d,score,(140,330,1000,180),150,'white')
+        d.rounded_rectangle((520,555,760,560),2,fill=style['accent_color'])
+    elif t['replay'] in label:
+        d.rounded_rectangle((500,125,780,168),12,fill=(13,32,50,225),outline=style['accent_color'],width=1)
+        put(d,label,(510,130,260,32),21,'#f5d795')
+    brand_mark(im,style);im.save(path)
+
+
+def landscape_intro(folder,title,logos,style=None,language='kk'):
+    from channel_templates import style as validate_style
+    from functools import partial
+    style=validate_style(style);t=strings(language);put=partial(centered,font_path=style['font_file'] or None)
+    folder=Path(folder);folder.mkdir(exist_ok=True)
+    bg=Image.new('RGBA',(1280,720),style['background_color']);d=ImageDraw.Draw(bg)
+    put(d,t['highlights'].upper(),(80,60,1120,65),36,style['accent_color'])
+    d.rounded_rectangle((520,145,760,149),2,fill=style['accent_color'])
+    put(d,'VS',(580,310,120,85),52,'white')
+    put(d,t['football_highlights'].upper(),(150,572,980,45),23,style['accent_color'])
+    brand_mark(bg,style);base=folder/'intro-base.png';bg.save(base)
+    pair=parse_match_title(title);names=[pair['team_a'],pair['team_b']] if pair else [t['team_a'],t['team_b']]
+    paths=[]
+    for index,name in enumerate(names):
+        layer=Image.new('RGBA',bg.size);ld=ImageDraw.Draw(layer);x=155 if index==0 else 805
+        ld.rounded_rectangle((x,195,x+320,535),24,fill=style['panel_color'],outline=style['accent_color'],width=3)
+        ld.ellipse((x+65,220,x+255,410),fill='#edf0f3');loaded=False
+        if index<len(logos) and logos[index]:
+            try:
+                with Image.open(logos[index]['path']) as badge:
+                    badge=badge.convert('RGBA');badge.thumbnail((165,165))
+                    layer.alpha_composite(badge,(x+160-badge.width//2,315-badge.height//2));loaded=True
+            except (OSError,ValueError):pass
+        ld=ImageDraw.Draw(layer)
+        if not loaded:
+            ld.polygon([(x+105,255),(x+215,255),(x+207,340),(x+160,380),(x+113,340)],fill='#b82d36' if index==0 else '#236cb4')
+            put(ld,''.join(w[0] for w in name.split() if w)[:2].upper(),(x+112,273,96,68),38,'white')
+        words=name.upper().split();lines=[' '.join(words)]
+        if len(lines[0])>20 and len(words)>1:
+            cut=max(1,len(words)//2);lines=[' '.join(words[:cut]),' '.join(words[cut:])]
+        for j,line in enumerate(lines):put(ld,line,(x+15,435+j*36,290,38),29,style['text_color'])
+        path=folder/f'intro-{index}.png';layer.save(path);paths.append(path)
     return base,*paths

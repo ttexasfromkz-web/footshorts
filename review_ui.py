@@ -30,7 +30,7 @@ class ReviewWindow(tk.Toplevel):
         super().__init__(owner)
         self.project=copy.deepcopy(project);self.on_saved=on_saved;self.on_closed=on_closed
         self.source=source
-        self.model=ReviewModel(project.get('clips',[]),info['duration'])
+        self.model=ReviewModel(project.get('clips',[]),info['duration'],project.get('settings',{}).get('output_format','shorts'))
         self.baseline=copy.deepcopy(self.model.clips)
         self.audio_enabled=audio;self.player=None;self.mode='source';self.index=0
         self.alive=True;self.after_id=None;self.scrub_id=None;self.scale_guard=False;self.image_box=None;self.clip_stop=None
@@ -82,6 +82,8 @@ class ReviewWindow(tk.Toplevel):
         ttk.Button(row,text='Гол емес',command=self.clear_goal).pack(side='left',padx=3)
         self.goal_label=ttk.Label(side,text='');self.goal_label.pack(anchor='w')
         ttk.Separator(side).pack(fill='x',pady=7)
+        camera_side=ttk.Frame(side);camera_side.pack(fill='x')
+        side=camera_side
         self.focus_mode=tk.BooleanVar(value=False)
         ttk.Checkbutton(side,text='Кадр бағыты: видеодан нүкте таңда',variable=self.focus_mode).pack(anchor='w')
         ttk.Label(side,text='Бір нүкте — бекітілген кадр.\nБірнеше нүкте — жұмсақ ауысу.',wraplength=290).pack(anchor='w')
@@ -94,6 +96,13 @@ class ReviewWindow(tk.Toplevel):
         self.zoom=tk.StringVar(value='1.0')
         ttk.Spinbox(row,from_=1,to=2,increment=.1,textvariable=self.zoom,width=5).pack(side='left',padx=4)
         ttk.Button(row,text='Қолдану',command=self.apply_zoom).pack(side='left')
+        if self.model.output_format=='landscape':
+            def disable(widget):
+                for child in widget.winfo_children():
+                    if isinstance(child,(ttk.Button,ttk.Checkbutton,ttk.Spinbox)):child.configure(state='disabled')
+                    disable(child)
+            disable(camera_side)
+            ttk.Label(camera_side,text='16:9 — толық кадр сақталады.').pack(anchor='w')
         self.position_text=tk.StringVar()
         ttk.Label(main,textvariable=self.position_text).grid(row=2,column=0,sticky='w',pady=(5,0))
         self.scale=ttk.Scale(main,from_=0,to=1,command=self.scrub)
@@ -186,7 +195,7 @@ class ReviewWindow(tk.Toplevel):
         self.canvas.delete('all');self.canvas.create_image(x,y,anchor='nw',image=self.photo)
         if self.mode=='source' and self.model.clips:
             clip=self.model.clips[self.index];points=clip.get('focus_points',[])
-            if points and self.project.get('settings',{}).get('action_camera',False):
+            if points and self.model.output_format=='shorts' and self.project.get('settings',{}).get('action_camera',False):
                 import camera
                 sw=self.player.info['width'];sh=self.player.info['height']
                 top=float(self.project.get('settings',{}).get('crop_top',.15))
@@ -211,7 +220,7 @@ class ReviewWindow(tk.Toplevel):
         try:
             settings={**workflow.DEFAULTS,**self.project.get('settings',{})}
             p=plan_timeline(self.model.clips,settings['target'],settings['show_final'],settings['replays'],settings['replay_speed'],
-                            intro_seconds=3 if settings['intro'] else 0)
+                            intro_seconds=3 if settings['intro'] else 0,output_format=settings['output_format'])
             text=f"Жалпы ұзақтығы: {p['duration']:.1f} сек."
         except ValueError as e:text=str(e)
         self.total_label.configure(text=text)
@@ -302,7 +311,7 @@ class ReviewWindow(tk.Toplevel):
             clips=self.model.validate()
             settings={**workflow.DEFAULTS,**self.project.get('settings',{})}
             plan_timeline(clips,settings['target'],settings['show_final'],settings['replays'],settings['replay_speed'],
-                          intro_seconds=3 if settings['intro'] else 0)
+                          intro_seconds=3 if settings['intro'] else 0,output_format=settings['output_format'])
             self.project.update(clips=clips,settings=settings,status='edited')
             workflow.save_project(self.project)
             self.baseline=copy.deepcopy(clips)
