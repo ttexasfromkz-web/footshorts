@@ -6,6 +6,39 @@ from highlight_signals import score_sample_times,refinement_times,fuse_candidate
 
 
 class SignalTests(unittest.TestCase):
+    def test_bad_ocr_spike_does_not_hide_the_next_real_goal(self):
+        readings=[(0,(0,0)),(8,(0,0)),(16,(8,8)),(24,(8,8)),(32,(1,0)),(40,(1,0))]
+        events=core.stable_scores(readings)
+        self.assertEqual([e['score'] for e in core.clean_score_events(events)],[(0,0),(1,0)])
+        self.assertEqual(len(core.confirmed_goal_candidates(events)),1)
+        self.assertIn(25.,refinement_times(readings,50))
+
+    def test_impossible_team_swap_does_not_poison_later_score(self):
+        events=[dict(time=t,score=s) for t,s in [(0,(1,0)),(20,(0,1)),(40,(2,0))]]
+        self.assertEqual([g['reason'] for g in core.confirmed_goal_candidates(events)],['Есеп өзгерді: 2:0'])
+
+    def test_unresolved_multi_goal_jump_is_not_split_into_invented_goals(self):
+        events=[dict(time=t,score=s) for t,s in [(0,(0,0)),(20,(2,0)),(40,(3,0))]]
+        self.assertEqual(len(core.clean_score_events(events)),3)
+        self.assertEqual([g['reason'] for g in core.confirmed_goal_candidates(events)],['Есеп өзгерді: 3:0'])
+
+    def test_three_overlapping_goals_do_not_duplicate_source_footage(self):
+        clips=core.choose_clips([dict(start=a,end=b,priority=100,kind='goal',goal_at=g)
+                                 for a,b,g in [(0,17,10),(28,45,38),(8,31,20)]],60,50)
+        self.assertEqual(len(clips),1)
+        self.assertEqual((clips[0]['start'],clips[0]['end']),(0,45))
+        self.assertEqual(clips[0]['goal_times'],[10,20,38])
+
+    def test_goal_mark_inside_full_budget_is_retained(self):
+        clips=core.choose_clips([dict(start=10,end=50,priority=100,kind='goal',goal_at=20),
+                                 dict(start=25,end=40,priority=100,kind='goal',goal_at=30)],100,40)
+        self.assertEqual(clips[0]['goal_times'],[20,30])
+
+    def test_clear_peak_in_otherwise_silent_audio_can_refine_confirmed_goal(self):
+        energy=np.zeros(40);energy[20]=.6
+        clip=fuse_candidates([dict(start=10,end=27,priority=100,kind='goal',goal_at=18)],energy)[0]
+        self.assertTrue(clip['evidence']['audio_peak']);self.assertEqual(clip['goal_at'],19)
+
     def test_full_match_sampling_can_confirm_scores(self):
         times=score_sample_times(5400)
         self.assertLessEqual(max(b-a for a,b in zip(times,times[1:])),8)

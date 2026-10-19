@@ -119,11 +119,30 @@ def stable_scores(readings):
             events.append(dict(time=first, score=score))
     return events
 
+def clean_score_events(events):
+    """Ignore an inconsistent OCR state only when the following state resolves it.
+
+    Keep genuine multi-goal jumps as unknown gaps, and keep unit increases followed
+    by reversals so the existing VAR handling can retract them.
+    """
+    def increase(a,b):
+        return sum(b)-sum(a) if all(y>=x for x,y in zip(a,b)) else None
+    cleaned=[]
+    for i,event in enumerate(events):
+        if cleaned and i+1<len(events):
+            previous=cleaned[-1]['score'];current=event['score'];following=events[i+1]['score']
+            if (increase(previous,current)!=1 and increase(previous,following)==1
+                    and increase(current,following) is None):
+                continue
+        cleaned.append(event)
+    return cleaned
+
+
 def confirmed_goal_candidates(events):
     # A later return to an earlier score retracts the intervening scoreboard state.
     # This handles explicit VAR score reversals, not every possible VAR decision.
     history=[]
-    for ev in events:
+    for ev in clean_score_events(events):
         score=tuple(ev['score'])
         earlier=next((i for i,x in enumerate(history) if tuple(x['score'])==score),None)
         if earlier is not None:
@@ -141,23 +160,23 @@ def choose_clips(candidates, duration, target):
     target = min(float(target), duration)
     chosen = []
     for c in sorted(candidates, key=lambda c: c['priority'], reverse=True):
-        if sum(x['end']-x['start'] for x in chosen) >= target-.2:
-            break
         start, end = max(0, c['start']), min(duration, c['end'])
         # Keep non-overlapping footage. Do not silently repeat the same goal.
-        overlap=next((x for x in chosen if start < x['end']+1 and end > x['start']-1),None)
-        if overlap:
-            if c.get('kind')=='goal' and overlap.get('kind')=='goal':
-                lo=min(start,overlap['start']);hi=max(end,overlap['end'])
+        overlaps=[x for x in chosen if start < x['end']+1 and end > x['start']-1]
+        if overlaps:
+            if c.get('kind')=='goal' and all(x.get('kind')=='goal' for x in overlaps):
+                lo=min(start,*(x['start'] for x in overlaps));hi=max(end,*(x['end'] for x in overlaps))
                 used=sum(x['end']-x['start'] for x in chosen)
-                if used-(overlap['end']-overlap['start'])+(hi-lo)<=target:
-                    times=sorted({*overlap.get('goal_times',[overlap.get('goal_at',overlap['start'])]),*c.get('goal_times',[c.get('goal_at',start)])})
-                    overlap.update(start=round(lo,2),end=round(hi,2),goal_times=times,goal_at=times[0],
-                                   reason=overlap.get('reason','Гол')+' / '+c.get('reason','Гол'))
+                if used-sum(x['end']-x['start'] for x in overlaps)+(hi-lo)<=target:
+                    times=sorted({t for x in [*overlaps,c] for t in x.get('goal_times',[x.get('goal_at',max(0,x['start']))])})
+                    combined=dict(overlaps[0],start=round(lo,2),end=round(hi,2),goal_times=times,
+                                  goal_at=min(hi-.05,max(lo,times[0])),
+                                  reason=' / '.join(dict.fromkeys(x.get('reason','Гол') for x in [*overlaps,c])))
+                    chosen=[x for x in chosen if x not in overlaps];chosen.append(combined)
             continue
         left = target-sum(x['end']-x['start'] for x in chosen)
         if left < 3:
-            break
+            continue
         if end-start > left+.001:
             continue
         if end-start >= 3:
@@ -252,6 +271,11 @@ def analyze(video, target=180, roi=(0,0,.5,.17), use_ocr=True, log=print, cancel
         if len(recent)>=2 and recent[-1] == last['score'] and recent.count(last['score'])>=2:
             final = ':'.join(map(str,last['score']))
     candidates = confirmed_goal_candidates(events)
+    ignored=[event for event in events if event not in clean_score_events(events)]
+    if ignored:warnings.append(f'Кейінгі есепке қайшы OCR көрсеткіштері ескерілмеді: {len(ignored)}.')
+    cleaned=clean_score_events(events)
+    if any(sum(b['score'])-sum(a['score'])>1 and all(y>=x for x,y in zip(a['score'],b['score'])) for a,b in zip(cleaned,cleaned[1:])):
+        warnings.append('Есеп бірден бірнеше голға өсті. Жеке гол уақыттарын қолмен тексеріңіз.')
     energy=np.asarray([],dtype=float)
     log('@progress:analyze:0.85:Комментатор мен стадион дыбысын талдау')
     log('Комментатор мен стадион дыбысын талдау…')
@@ -280,6 +304,7 @@ def analyze(video, target=180, roi=(0,0,.5,.17), use_ocr=True, log=print, cancel
     except Cancelled:raise
     except Exception as e:warnings.append('Кадрларды салыстыру орындалмады: '+str(e))
     if removed:warnings.append(f'Өте ұқсас қайталанған сәттер алынып тасталды: {removed}.')
+    detected_goals=[dict(c) for c in candidates if c.get('kind')=='goal']
     # Reserve a final score card and 0.1s for container/audio rounding.
     limit=min(180.0,float(target))
     if not math.isfinite(limit) or limit<4:raise ValueError('Уақыт шегі: 4–180 секунд.')
@@ -291,7 +316,8 @@ def analyze(video, target=180, roi=(0,0,.5,.17), use_ocr=True, log=print, cancel
     warnings.append('Бұл — видеода соңғы көрінген есеп. Видео матч аяқталмай тұрып үзілген болса, финалдық есеп болмауы мүмкін.')
     log('@progress:analyze:1:Талдау аяқталды')
     return dict(video=str(Path(video).resolve()),info=info,score=final,clips=clips,
-                score_events=events,warnings=warnings,ocr_readings=readings,duplicate_candidates_removed=removed)
+                score_events=events,warnings=warnings,ocr_readings=readings,duplicate_candidates_removed=removed,
+                detected_goals=detected_goals,ignored_score_states=ignored)
 
 def validate_clips(clips,duration):
     if not clips:

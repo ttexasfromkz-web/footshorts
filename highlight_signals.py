@@ -12,8 +12,8 @@ def score_sample_times(duration):
 
 def refinement_times(readings,duration):
     """Densely sample scoreboard increases, including two goals between sparse reads."""
-    from core import stable_scores
-    events=stable_scores(readings);windows=[]
+    from core import stable_scores,clean_score_events
+    events=clean_score_events(stable_scores(readings));windows=[]
     for before,after in zip(events,events[1:]):
         difference=sum(after['score'])-sum(before['score'])
         if not 1<=difference<=3 or any(a<b for a,b in zip(after['score'],before['score'])):continue
@@ -87,7 +87,7 @@ def fuse_candidates(candidates,energy):
         c=dict(candidate);is_goal=c.get('kind')=='goal'
         evidence={**c.get('evidence',{}),'score_change':is_goal,'audio_peak':False}
         a=max(0,int(c['start']));b=min(len(energy),max(a,int(c['end'])))
-        if b>a and baseline>0:
+        if b>a:
             peak=a+int(np.argmax(energy[a:b]));strong=energy[peak]>max(.015,baseline*1.25)
             evidence['audio_peak']=bool(strong)
             if strong:
