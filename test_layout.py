@@ -11,6 +11,7 @@ import app
 class CompactLayoutTests(unittest.TestCase):
     def test_startup_format_choice_and_unlimited_setting_persist(self):
         with tempfile.TemporaryDirectory() as d,patch('app.BASE',Path(d)),patch.object(app.App,'check_updates'),patch('updater.mark_healthy'):
+            Path(d,'version.json').write_text('{"version":"3.1.0"}')
             ui=app.App(prompt_format=False)
             try:
                 ui.update();ui.choose_startup_format();dialog=ui.format_dialog
