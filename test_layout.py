@@ -58,7 +58,7 @@ class CompactLayoutTests(unittest.TestCase):
                 self.assertEqual(ui.settings()['youtube_cookie_file'],'')
                 ui.youtube_login.set('Аккаунтсыз')
                 self.assertEqual(ui.settings()['youtube_browser'],'')
-                self.assertEqual(ui.language_combo['state'],'readonly')
+                self.assertEqual(str(ui.language_combo['state']),'readonly')
                 self.assertEqual(ui.settings()['language'],'kk')
                 ui.language.set('Русский');ui.save_state();ui.language.set('English');ui.restore_state()
                 self.assertEqual(ui.settings()['language'],'ru')
