@@ -1,0 +1,462 @@
+{
+  "schema": 1,
+  "pack": "national-001",
+  "status": "staged; application integration pending",
+  "entries": [
+    {
+      "id": "national:kazakhstan",
+      "kind": "national",
+      "names": {
+        "kk": "Қазақстан",
+        "ru": "Казахстан",
+        "en": "Kazakhstan"
+      },
+      "aliases": [
+        "Қазақстан",
+        "Казахстан",
+        "Kazakhstan",
+        "KAZ",
+        "Qazaqstan",
+        "Kazakhstan national team"
+      ],
+      "file": "national/kazakhstan.png",
+      "sha256": "d918d5b35648aa15c0c37d1d03b4bef664c309827ccc05b46d4edadcdf607c29",
+      "source": "https://kff.kz/images/logo-alone.png",
+      "source_page": "https://kff.kz/kk",
+      "review": "team identity visually checked; current-season variant not fully audited",
+      "rights": "Third-party federation/team mark; no open license asserted",
+      "added": "2026-10-19",
+      "approved_for_auto_use": false
+    },
+    {
+      "id": "national:argentina",
+      "kind": "national",
+      "names": {
+        "kk": "Аргентина",
+        "ru": "Аргентина",
+        "en": "Argentina"
+      },
+      "aliases": [
+        "Аргентина",
+        "Argentina",
+        "ARG"
+      ],
+      "file": "national/argentina.png",
+      "sha256": "710b347160d75ff8ef3a4890072109c19ded303dd09995d433c95ba2bfa15092",
+      "source": "https://github.com/Sachawd/wc26-assets/blob/678d8838fb1e3e89e830ad02da55cd44d1fa5eb9/national-team-logos/argentina-national-team.png",
+      "source_page": "https://github.com/Sachawd/wc26-assets",
+      "review": "team identity visually checked; current-season variant not fully audited",
+      "rights": "Third-party federation/team mark; no open license asserted",
+      "added": "2026-10-19",
+      "approved_for_auto_use": false
+    },
+    {
+      "id": "national:brazil",
+      "kind": "national",
+      "names": {
+        "kk": "Бразилия",
+        "ru": "Бразилия",
+        "en": "Brazil"
+      },
+      "aliases": [
+        "Бразилия",
+        "Brazil",
+        "BRA"
+      ],
+      "file": "national/brazil.png",
+      "sha256": "7f3c2328b4176318550942df3b715c6c6985ed95c22f2b6748b79b84c914d91e",
+      "source": "https://github.com/Sachawd/wc26-assets/blob/678d8838fb1e3e89e830ad02da55cd44d1fa5eb9/national-team-logos/brazil-national-team.png",
+      "source_page": "https://github.com/Sachawd/wc26-assets",
+      "review": "team identity visually checked; current-season variant not fully audited",
+      "rights": "Third-party federation/team mark; no open license asserted",
+      "added": "2026-10-19",
+      "approved_for_auto_use": false
+    },
+    {
+      "id": "national:france",
+      "kind": "national",
+      "names": {
+        "kk": "Франция",
+        "ru": "Франция",
+        "en": "France"
+      },
+      "aliases": [
+        "Франция",
+        "France",
+        "FRA"
+      ],
+      "file": "national/france.png",
+      "sha256": "0d76711ed901805708a71dcc5fbbd6ad4719cf8473fefabd2f7e6caff02934af",
+      "source": "https://github.com/Sachawd/wc26-assets/blob/678d8838fb1e3e89e830ad02da55cd44d1fa5eb9/national-team-logos/france-national-team.png",
+      "source_page": "https://github.com/Sachawd/wc26-assets",
+      "review": "team identity visually checked; current-season variant not fully audited",
+      "rights": "Third-party federation/team mark; no open license asserted",
+      "added": "2026-10-19",
+      "approved_for_auto_use": false
+    },
+    {
+      "id": "national:england",
+      "kind": "national",
+      "names": {
+        "kk": "Англия",
+        "ru": "Англия",
+        "en": "England"
+      },
+      "aliases": [
+        "Англия",
+        "England",
+        "ENG"
+      ],
+      "file": "national/england.png",
+      "sha256": "6970d9cb14cc899ccbca5e947e018d0c05c890c9d40480ba2c5ddb0795c8dcd7",
+      "source": "https://github.com/Sachawd/wc26-assets/blob/678d8838fb1e3e89e830ad02da55cd44d1fa5eb9/national-team-logos/england-national-team.png",
+      "source_page": "https://github.com/Sachawd/wc26-assets",
+      "review": "team identity visually checked; current-season variant not fully audited",
+      "rights": "Third-party federation/team mark; no open license asserted",
+      "added": "2026-10-19",
+      "approved_for_auto_use": false
+    },
+    {
+      "id": "national:spain",
+      "kind": "national",
+      "names": {
+        "kk": "Испания",
+        "ru": "Испания",
+        "en": "Spain"
+      },
+      "aliases": [
+        "Испания",
+        "Spain",
+        "ESP"
+      ],
+      "file": "national/spain.png",
+      "sha256": "3056f9650d51373436b853ea5f6c609e447693d9a7b29137624b69d7e02b019d",
+      "source": "https://github.com/Sachawd/wc26-assets/blob/678d8838fb1e3e89e830ad02da55cd44d1fa5eb9/national-team-logos/spain-national-team.png",
+      "source_page": "https://github.com/Sachawd/wc26-assets",
+      "review": "One-star variant; current version needs rechecking before automatic use",
+      "rights": "Third-party federation/team mark; no open license asserted",
+      "added": "2026-10-19",
+      "approved_for_auto_use": false
+    },
+    {
+      "id": "national:germany",
+      "kind": "national",
+      "names": {
+        "kk": "Германия",
+        "ru": "Германия",
+        "en": "Germany"
+      },
+      "aliases": [
+        "Германия",
+        "Germany",
+        "GER"
+      ],
+      "file": "national/germany.png",
+      "sha256": "4293faf6d728e11719c970b7b3c6993a4ff15b7aeb1eed6630b2a7488c9f94cf",
+      "source": "https://github.com/Sachawd/wc26-assets/blob/678d8838fb1e3e89e830ad02da55cd44d1fa5eb9/national-team-logos/germany-national-team.png",
+      "source_page": "https://github.com/Sachawd/wc26-assets",
+      "review": "team identity visually checked; current-season variant not fully audited",
+      "rights": "Third-party federation/team mark; no open license asserted",
+      "added": "2026-10-19",
+      "approved_for_auto_use": false
+    },
+    {
+      "id": "national:portugal",
+      "kind": "national",
+      "names": {
+        "kk": "Португалия",
+        "ru": "Португалия",
+        "en": "Portugal"
+      },
+      "aliases": [
+        "Португалия",
+        "Portugal",
+        "POR"
+      ],
+      "file": "national/portugal.png",
+      "sha256": "2eddf93b05b87fae94fb1cd74f49c3b3540dc77f535a7a7cf950884b5f9d7b2f",
+      "source": "https://github.com/Sachawd/wc26-assets/blob/678d8838fb1e3e89e830ad02da55cd44d1fa5eb9/national-team-logos/portugal-national-team.png",
+      "source_page": "https://github.com/Sachawd/wc26-assets",
+      "review": "team identity visually checked; current-season variant not fully audited",
+      "rights": "Third-party federation/team mark; no open license asserted",
+      "added": "2026-10-19",
+      "approved_for_auto_use": false
+    },
+    {
+      "id": "national:italy",
+      "kind": "national",
+      "names": {
+        "kk": "Италия",
+        "ru": "Италия",
+        "en": "Italy"
+      },
+      "aliases": [
+        "Италия",
+        "Italy",
+        "ITA"
+      ],
+      "file": "national/italy.png",
+      "sha256": "1ac71858ff6d708055f2adb58120ce3bfd3c70b8c76fa50c05b1ef2d3cd12f1b",
+      "source": "https://github.com/Sachawd/wc26-assets/blob/678d8838fb1e3e89e830ad02da55cd44d1fa5eb9/national-team-logos/italy-national-team.png",
+      "source_page": "https://github.com/Sachawd/wc26-assets",
+      "review": "team identity visually checked; current-season variant not fully audited",
+      "rights": "Third-party federation/team mark; no open license asserted",
+      "added": "2026-10-19",
+      "approved_for_auto_use": false
+    },
+    {
+      "id": "national:netherlands",
+      "kind": "national",
+      "names": {
+        "kk": "Нидерланд",
+        "ru": "Нидерланды",
+        "en": "Netherlands"
+      },
+      "aliases": [
+        "Нидерланд",
+        "Нидерланды",
+        "Netherlands",
+        "NED",
+        "Нидерландия",
+        "Holland"
+      ],
+      "file": "national/netherlands.png",
+      "sha256": "5f33309398ed6d6177f6a132e58a236496d2a6dfc4fa7e3c54c8932b25903efc",
+      "source": "https://github.com/Sachawd/wc26-assets/blob/678d8838fb1e3e89e830ad02da55cd44d1fa5eb9/national-team-logos/netherlands-national-team.png",
+      "source_page": "https://github.com/Sachawd/wc26-assets",
+      "review": "team identity visually checked; current-season variant not fully audited",
+      "rights": "Third-party federation/team mark; no open license asserted",
+      "added": "2026-10-19",
+      "approved_for_auto_use": false
+    },
+    {
+      "id": "national:belgium",
+      "kind": "national",
+      "names": {
+        "kk": "Бельгия",
+        "ru": "Бельгия",
+        "en": "Belgium"
+      },
+      "aliases": [
+        "Бельгия",
+        "Belgium",
+        "BEL"
+      ],
+      "file": "national/belgium.png",
+      "sha256": "c2b0ca236bd4660cd0a1ebbff7f9b39d09d7bcb6ae5f08513a94a34090ef327f",
+      "source": "https://github.com/Sachawd/wc26-assets/blob/678d8838fb1e3e89e830ad02da55cd44d1fa5eb9/national-team-logos/belgium-national-team.png",
+      "source_page": "https://github.com/Sachawd/wc26-assets",
+      "review": "team identity visually checked; current-season variant not fully audited",
+      "rights": "Third-party federation/team mark; no open license asserted",
+      "added": "2026-10-19",
+      "approved_for_auto_use": false
+    },
+    {
+      "id": "national:croatia",
+      "kind": "national",
+      "names": {
+        "kk": "Хорватия",
+        "ru": "Хорватия",
+        "en": "Croatia"
+      },
+      "aliases": [
+        "Хорватия",
+        "Croatia",
+        "CRO"
+      ],
+      "file": "national/croatia.png",
+      "sha256": "1648e614544205a443f480e9eb08a2a15b20a0e53a0e29b19dcb3f41e5551497",
+      "source": "https://github.com/Sachawd/wc26-assets/blob/678d8838fb1e3e89e830ad02da55cd44d1fa5eb9/national-team-logos/croatia-national-team.png",
+      "source_page": "https://github.com/Sachawd/wc26-assets",
+      "review": "team identity visually checked; current-season variant not fully audited",
+      "rights": "Third-party federation/team mark; no open license asserted",
+      "added": "2026-10-19",
+      "approved_for_auto_use": false
+    },
+    {
+      "id": "national:uruguay",
+      "kind": "national",
+      "names": {
+        "kk": "Уругвай",
+        "ru": "Уругвай",
+        "en": "Uruguay"
+      },
+      "aliases": [
+        "Уругвай",
+        "Uruguay",
+        "URU"
+      ],
+      "file": "national/uruguay.png",
+      "sha256": "b69f9aaee05b5e6cee934aac0438e549076ce4ea8ca5310538850071c926ac99",
+      "source": "https://github.com/Sachawd/wc26-assets/blob/678d8838fb1e3e89e830ad02da55cd44d1fa5eb9/national-team-logos/uruguay-national-team.png",
+      "source_page": "https://github.com/Sachawd/wc26-assets",
+      "review": "team identity visually checked; current-season variant not fully audited",
+      "rights": "Third-party federation/team mark; no open license asserted",
+      "added": "2026-10-19",
+      "approved_for_auto_use": false
+    },
+    {
+      "id": "national:colombia",
+      "kind": "national",
+      "names": {
+        "kk": "Колумбия",
+        "ru": "Колумбия",
+        "en": "Colombia"
+      },
+      "aliases": [
+        "Колумбия",
+        "Colombia",
+        "COL"
+      ],
+      "file": "national/colombia.png",
+      "sha256": "c95d429fc1a806e4e168e3158cc0525ca2de2f3bd0e7ccbf972bda1234677d42",
+      "source": "https://github.com/Sachawd/wc26-assets/blob/678d8838fb1e3e89e830ad02da55cd44d1fa5eb9/national-team-logos/colombia-national-team.png",
+      "source_page": "https://github.com/Sachawd/wc26-assets",
+      "review": "team identity visually checked; current-season variant not fully audited",
+      "rights": "Third-party federation/team mark; no open license asserted",
+      "added": "2026-10-19",
+      "approved_for_auto_use": false
+    },
+    {
+      "id": "national:mexico",
+      "kind": "national",
+      "names": {
+        "kk": "Мексика",
+        "ru": "Мексика",
+        "en": "Mexico"
+      },
+      "aliases": [
+        "Мексика",
+        "Mexico",
+        "MEX"
+      ],
+      "file": "national/mexico.png",
+      "sha256": "be8eb7a9b7d270f2cf6316316af32961cf3d6e96436b6eb37ef36f5adbcb975f",
+      "source": "https://github.com/Sachawd/wc26-assets/blob/678d8838fb1e3e89e830ad02da55cd44d1fa5eb9/national-team-logos/mexico-national-team.png",
+      "source_page": "https://github.com/Sachawd/wc26-assets",
+      "review": "team identity visually checked; current-season variant not fully audited",
+      "rights": "Third-party federation/team mark; no open license asserted",
+      "added": "2026-10-19",
+      "approved_for_auto_use": false
+    },
+    {
+      "id": "national:usa",
+      "kind": "national",
+      "names": {
+        "kk": "АҚШ",
+        "ru": "США",
+        "en": "United States"
+      },
+      "aliases": [
+        "АҚШ",
+        "США",
+        "United States",
+        "USA",
+        "USMNT",
+        "United States of America"
+      ],
+      "file": "national/usa.png",
+      "sha256": "11eb862a7b22389e2da687523e2c17346ca4e9c8a89cd8cc2306019d4a34072c",
+      "source": "https://github.com/Sachawd/wc26-assets/blob/678d8838fb1e3e89e830ad02da55cd44d1fa5eb9/national-team-logos/usmnt-national-team.png",
+      "source_page": "https://github.com/Sachawd/wc26-assets",
+      "review": "team identity visually checked; current-season variant not fully audited",
+      "rights": "Third-party federation/team mark; no open license asserted",
+      "added": "2026-10-19",
+      "approved_for_auto_use": false
+    },
+    {
+      "id": "national:japan",
+      "kind": "national",
+      "names": {
+        "kk": "Жапония",
+        "ru": "Япония",
+        "en": "Japan"
+      },
+      "aliases": [
+        "Жапония",
+        "Япония",
+        "Japan",
+        "JPN"
+      ],
+      "file": "national/japan.png",
+      "sha256": "a112a8bb8d2d40420b271fe0e3b224d7781aab6a867c0b6c3516cad8bd117ac5",
+      "source": "https://github.com/Sachawd/wc26-assets/blob/678d8838fb1e3e89e830ad02da55cd44d1fa5eb9/national-team-logos/japan-national-team.png",
+      "source_page": "https://github.com/Sachawd/wc26-assets",
+      "review": "team identity visually checked; current-season variant not fully audited",
+      "rights": "Third-party federation/team mark; no open license asserted",
+      "added": "2026-10-19",
+      "approved_for_auto_use": false
+    },
+    {
+      "id": "national:south-korea",
+      "kind": "national",
+      "names": {
+        "kk": "Оңтүстік Корея",
+        "ru": "Южная Корея",
+        "en": "South Korea"
+      },
+      "aliases": [
+        "Оңтүстік Корея",
+        "Южная Корея",
+        "South Korea",
+        "KOR",
+        "Korea Republic",
+        "Korea Rep.",
+        "Корея Республикасы"
+      ],
+      "file": "national/south-korea.png",
+      "sha256": "f87b6ebe47860fb900202e3918ce693da2d8896dabb6695c035d5ddc7ddf22b9",
+      "source": "https://github.com/Sachawd/wc26-assets/blob/678d8838fb1e3e89e830ad02da55cd44d1fa5eb9/national-team-logos/south-korea-national-team.png",
+      "source_page": "https://github.com/Sachawd/wc26-assets",
+      "review": "team identity visually checked; current-season variant not fully audited",
+      "rights": "Third-party federation/team mark; no open license asserted",
+      "added": "2026-10-19",
+      "approved_for_auto_use": false
+    },
+    {
+      "id": "national:morocco",
+      "kind": "national",
+      "names": {
+        "kk": "Марокко",
+        "ru": "Марокко",
+        "en": "Morocco"
+      },
+      "aliases": [
+        "Марокко",
+        "Morocco",
+        "MAR"
+      ],
+      "file": "national/morocco.png",
+      "sha256": "d769a2d1bee8dc48c8f08fdb8fcc4b3e3e3af2a24fb145d4bbd3dd9e4ecadec9",
+      "source": "https://github.com/Sachawd/wc26-assets/blob/678d8838fb1e3e89e830ad02da55cd44d1fa5eb9/national-team-logos/morocco-national-team.png",
+      "source_page": "https://github.com/Sachawd/wc26-assets",
+      "review": "team identity visually checked; current-season variant not fully audited",
+      "rights": "Third-party federation/team mark; no open license asserted",
+      "added": "2026-10-19",
+      "approved_for_auto_use": false
+    },
+    {
+      "id": "national:uzbekistan",
+      "kind": "national",
+      "names": {
+        "kk": "Өзбекстан",
+        "ru": "Узбекистан",
+        "en": "Uzbekistan"
+      },
+      "aliases": [
+        "Өзбекстан",
+        "Узбекистан",
+        "Uzbekistan",
+        "UZB"
+      ],
+      "file": "national/uzbekistan.png",
+      "sha256": "21dbd40bfa08aeaa2c80519d3cf3765d88225a4c4b91dbc207694149536dac31",
+      "source": "https://github.com/Sachawd/wc26-assets/blob/678d8838fb1e3e89e830ad02da55cd44d1fa5eb9/national-team-logos/uzbekistan-national-team.png",
+      "source_page": "https://github.com/Sachawd/wc26-assets",
+      "review": "team identity visually checked; current-season variant not fully audited",
+      "rights": "Third-party federation/team mark; no open license asserted",
+      "added": "2026-10-19",
+      "approved_for_auto_use": false
+    }
+  ]
+}
