@@ -22,7 +22,7 @@ class CompactLayoutTests(unittest.TestCase):
                 ui.youtube_login.set('Аккаунтсыз')
                 self.assertEqual(ui.settings()['youtube_browser'],'')
                 self.assertTrue(ui.show_final.get())
-                self.assertEqual(ui.show_final_btn.master,ui.visual_panel)
+                self.assertEqual(ui.show_final_btn.master.master,ui.visual_panel)
                 ui.show_final_btn.invoke();self.assertFalse(ui.settings()['show_final'])
                 ui.save_state();ui.show_final.set(True);ui.restore_state()
                 self.assertFalse(ui.show_final.get())
