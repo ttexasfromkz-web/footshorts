@@ -50,7 +50,7 @@ jobs:
           try {
             & "$target\.runtime\python.exe" "$target\runtime_manager.py" --repair
             if ($LASTEXITCODE -ne 0) { throw 'Bundled runtime validation failed' }
-            & "$target\.runtime\python.exe" -c "import tkinter; w=tkinter.Tk(); w.withdraw(); w.destroy(); import core,rapidocr_onnxruntime; core.run([core.ffmpeg(),'-version']); print('Installed Tk, OCR and video modules are ready')"
+            & "$target\.runtime\python.exe" -c "import tkinter; w=tkinter.Tk(); w.withdraw(); w.destroy(); import core,rapidocr_onnxruntime,clip_timeline,channel_templates,channel_ui; core.run([core.ffmpeg(),'-version']); print('Installed Tk, OCR, timeline, templates and video modules are ready')"
             if ($LASTEXITCODE -ne 0) { throw 'Installed application imports failed' }
           } finally { Pop-Location; $env:PATH = $oldPath }
       - name: Publish release

@@ -11,6 +11,14 @@ from goal_evaluation import match_goals,evaluate_project,seconds
 
 
 class GoalEvaluationTests(unittest.TestCase):
+    def test_ocr_disables_telemetry_before_constructing_inference_sessions(self):
+        import core
+        order=[]
+        runtime=SimpleNamespace(disable_telemetry_events=lambda:order.append('telemetry_off'))
+        engine=SimpleNamespace(RapidOCR=lambda **_:order.append('session'))
+        with patch.dict(sys.modules,{'onnxruntime':runtime,'rapidocr_onnxruntime':engine}):core.ocr_engine()
+        self.assertEqual(order,['telemetry_off','session'])
+
     def test_analysis_keeps_real_transitions_after_wrong_ocr_state(self):
         import core
         cap=Mock();cap.time=0
@@ -19,8 +27,7 @@ class GoalEvaluationTests(unittest.TestCase):
         def ocr(_):
             a,b=(0,0) if cap.time<40 else (8,8) if cap.time<48 else (1,0) if cap.time<98 else (2,0)
             return ([[[[0,0],[30,0],[30,10],[0,10]],f'{a}-{b}',.99]],None)
-        engine=SimpleNamespace(RapidOCR=lambda **_:ocr)
-        with patch.dict(sys.modules,{'rapidocr_onnxruntime':engine}),patch('core.metadata',return_value=dict(duration=200,width=64,height=32,fps=30)),patch('cv2.VideoCapture',return_value=cap),patch('core.run',side_effect=RuntimeError('No audio in fixture')),patch('highlight_signals.inspect_candidates',side_effect=lambda video,candidates,*_:candidates):
+        with patch('core.ocr_engine',return_value=ocr),patch('core.metadata',return_value=dict(duration=200,width=64,height=32,fps=30)),patch('cv2.VideoCapture',return_value=cap),patch('core.run',side_effect=RuntimeError('No audio in fixture')),patch('highlight_signals.inspect_candidates',side_effect=lambda video,candidates,*_:candidates):
             analysis=core.analyze('synthetic-test.mp4',log=lambda _:None)
         self.assertEqual(analysis['score'],'2:0')
         self.assertEqual(len(analysis['ignored_score_states']),1)
@@ -41,6 +48,7 @@ class GoalEvaluationTests(unittest.TestCase):
             result=subprocess.run([sys.executable,str(script),str(project),str(labels),'--output',str(labels)],capture_output=True,text=True)
             self.assertNotEqual(result.returncode,0)
             self.assertEqual(json.loads(labels.read_text()),{'goals':['00:20']})
+
 
     def test_counts_misses_and_false_alarms_independently(self):
         r=match_goals([20,80],[21,150],5)

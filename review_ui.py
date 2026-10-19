@@ -10,6 +10,7 @@ import workflow
 from playback import PreviewPlayer
 from review_model import ReviewModel,interpolate
 from timeline import plan_timeline
+from clip_timeline import ClipTimeline
 
 
 def clock(t):
@@ -51,7 +52,14 @@ class ReviewWindow(tk.Toplevel):
         self.canvas.grid(row=1,column=0,sticky='nsew')
         self.canvas.bind('<Button-1>',self.focus_click)
         self.canvas.bind('<Configure>',lambda _:self.draw())
-        side=ttk.Frame(main,padding=(10,0,0,0));side.grid(row=1,column=1,sticky='ns')
+        side_area=ttk.Frame(main);side_area.grid(row=1,column=1,sticky='nsew')
+        side_scroll=tk.Canvas(side_area,width=330,height=300,highlightthickness=0)
+        side_bar=ttk.Scrollbar(side_area,orient='vertical',command=side_scroll.yview)
+        side_scroll.configure(yscrollcommand=side_bar.set)
+        side_bar.pack(side='right',fill='y');side_scroll.pack(side='left',fill='both',expand=True)
+        side=ttk.Frame(side_scroll,padding=(10,0,0,0));side_window=side_scroll.create_window(0,0,anchor='nw',window=side)
+        side.bind('<Configure>',lambda _:side_scroll.configure(scrollregion=side_scroll.bbox('all')))
+        side_scroll.bind('<Configure>',lambda e:side_scroll.itemconfigure(side_window,width=e.width))
         ttk.Label(side,text='Үзінділер',font=('Segoe UI',11,'bold')).pack(anchor='w')
         self.listbox=tk.Listbox(side,width=32,height=6,exportselection=False)
         self.listbox.pack(fill='both',expand=True);self.listbox.bind('<<ListboxSelect>>',self.select_clip)
@@ -59,6 +67,8 @@ class ReviewWindow(tk.Toplevel):
         row=ttk.Frame(side);row.pack(fill='x',pady=5)
         ttk.Button(row,text='Үзіндіні өшіру',command=self.delete_clip).pack(side='left')
         ttk.Button(row,text='Кері қайтару',command=self.undo).pack(side='left',padx=4)
+        ttk.Button(row,text='◀',width=3,command=lambda:self.move_clip(-1)).pack(side='left')
+        ttk.Button(row,text='▶',width=3,command=lambda:self.move_clip(1)).pack(side='left')
         self.start_text=tk.StringVar();self.end_text=tk.StringVar()
         row=ttk.Frame(side);row.pack(fill='x')
         ttk.Label(row,text='Басы').pack(side='left');ttk.Entry(row,textvariable=self.start_text,width=11).pack(side='left',padx=3)
@@ -88,9 +98,12 @@ class ReviewWindow(tk.Toplevel):
         ttk.Label(main,textvariable=self.position_text).grid(row=2,column=0,sticky='w',pady=(5,0))
         self.scale=ttk.Scale(main,from_=0,to=1,command=self.scrub)
         self.scale.grid(row=3,column=0,sticky='ew')
+        self.clip_timeline=ClipTimeline(main,self.model,self.timeline_select,self.timeline_edited,
+                                       lambda text:messagebox.showerror('Таймлайн',text,parent=self))
+        self.clip_timeline.grid(row=4,column=0,columnspan=2,sticky='ew',pady=(4,0))
         self.total_label=ttk.Label(main,text='',wraplength=850)
-        self.total_label.grid(row=4,column=0,columnspan=2,sticky='w',pady=5)
-        bottom=ttk.Frame(main);bottom.grid(row=5,column=0,columnspan=2,sticky='ew')
+        self.total_label.grid(row=5,column=0,columnspan=2,sticky='w',pady=5)
+        bottom=ttk.Frame(main);bottom.grid(row=6,column=0,columnspan=2,sticky='ew')
         ttk.Label(bottom,text='Өзгерістер қайта экспорттағаннан кейін видеоға түседі.').pack(side='left')
         ttk.Button(bottom,text='Сақтау',command=lambda:self.save(False)).pack(side='right',padx=3)
         ttk.Button(bottom,text='Сақтап, қайта жасау',command=lambda:self.save(True)).pack(side='right',padx=3)
@@ -202,7 +215,23 @@ class ReviewWindow(tk.Toplevel):
             text=f"Жалпы ұзақтығы: {p['duration']:.1f} сек."
         except ValueError as e:text=str(e)
         self.total_label.configure(text=text)
+        self.clip_timeline.redraw(self.index)
         self.draw()
+
+    def timeline_select(self,index):
+        self.index=index
+        if self.mode!='source':self.open_video('source')
+        if self.player:self.player.pause();self.player.seek(self.model.clips[index]['start'])
+        self.refresh_clips()
+
+    def timeline_edited(self,index):
+        self.index=index;self.refresh_clips()
+
+    def move_clip(self,delta):
+        def run():
+            destination=max(0,min(len(self.model.clips)-1,self.index+delta))
+            self.model.move(self.index,destination);self.index=destination
+        self.edit(run)
 
     def select_clip(self,event=None):
         chosen=self.listbox.curselection()

@@ -49,7 +49,8 @@ def plan_timeline(clips,limit=180,score_card=True,replays=True,replay_speed=.5,i
             selected.add(c['index']);used+=segment_duration(c)
         else:notes.append('Қосымша сәт шекке сыймады: '+str(c['index']+1))
     result=[]
-    for c in sorted(mains,key=lambda c:c['start']):
+    # The saved list is the editing order; automatic analysis already sorts by source time.
+    for c in mains:
         if c['index'] not in selected:continue
         result.append(c)
         if c['index'] in replay_selected:result.append(replay_map[c['index']])

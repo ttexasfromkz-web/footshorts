@@ -7,7 +7,8 @@ from PIL import Image, ImageDraw, ImageFont, ImageFilter
 from publishing import parse_match_title
 
 
-def font(size, italic=False):
+def font(size, italic=False,path=None):
+    if path:return ImageFont.truetype(str(path),size)
     names=['arialbi.ttf','arialbd.ttf'] if italic else ['arialbd.ttf']
     paths=[Path(os.environ.get('WINDIR','C:/Windows'))/'Fonts'/n for n in names]
     paths+=[Path('/usr/share/fonts/truetype/dejavu')/('DejaVuSans-BoldOblique.ttf' if italic else 'DejaVuSans-Bold.ttf')]
@@ -16,38 +17,53 @@ def font(size, italic=False):
     return ImageFont.truetype(str(path),size) if path else ImageFont.load_default()
 
 
-def centered(draw,text,box,size,fill):
+def centered(draw,text,box,size,fill,font_path=None):
     x,y,w,h=box
-    while size>12 and draw.textbbox((0,0),text,font=font(size))[2]>w:size-=1
-    f=font(size)
+    while size>12 and draw.textbbox((0,0),text,font=font(size,path=font_path))[2]>w:size-=1
+    f=font(size,path=font_path)
     while draw.textbbox((0,0),text,font=f)[2]>w and len(text)>2:text=text[:-2]+'…'
     b=draw.textbbox((0,0),text,font=f)
     draw.text((x+(w-(b[2]-b[0]))/2-b[0],y+(h-(b[3]-b[1]))/2-b[1]),text,font=f,fill=fill)
 
 
-def card(path,title,score='',label='',final=False):
+def brand_mark(im,style):
+    x=38
+    if style.get('brand_logo'):
+        with Image.open(style['brand_logo']) as logo:
+            logo=logo.convert('RGBA');logo.thumbnail((60,60));im.alpha_composite(logo,(38,1180))
+        x=112
+    if style.get('brand_name'):
+        d=ImageDraw.Draw(im)
+        centered(d,style['brand_name'],(x,1180,680-x,60),24,style['accent_color'],font_path=style.get('font_file') or None)
+
+
+def card(path,title,score='',label='',final=False,style=None):
+    from channel_templates import style as validate_style
+    from functools import partial
+    style=validate_style(style);put=partial(centered,font_path=style['font_file'] or None)
     im=Image.new('RGBA',(720,1280));d=ImageDraw.Draw(im)
     # Shadow, white face and a restrained gold rim.
     shadow=Image.new('RGBA',im.size);sd=ImageDraw.Draw(shadow)
     sd.rounded_rectangle((23,65,697,153),24,fill=(0,0,0,150))
     im.alpha_composite(shadow.filter(ImageFilter.GaussianBlur(7)));d=ImageDraw.Draw(im)
-    d.rounded_rectangle((24,58,696,146),24,fill='#fafafa',outline='#dcb56b',width=3)
+    d.rounded_rectangle((24,58,696,146),24,fill=style['panel_color'],outline=style['accent_color'],width=3)
     pair=parse_match_title(title)
     if pair:
         d.ellipse((39,88,61,110),fill='#d73031');d.ellipse((659,88,681,110),fill='#2474ce')
-        centered(d,pair['team_a'].upper(),(69,73,217,55),25,'#102336')
-        centered(d,pair['team_b'].upper(),(434,73,217,55),25,'#102336')
-        d.rounded_rectangle((296,59,424,145),20,fill='#0d2032',outline='#dcb56b',width=2)
-        centered(d,score if final else 'VS',(303,74,114,54),34,'white')
+        put(d,pair['team_a'].upper(),(69,73,217,55),25,style['text_color'])
+        put(d,pair['team_b'].upper(),(434,73,217,55),25,style['text_color'])
+        d.rounded_rectangle((296,59,424,145),20,fill='#0d2032',outline=style['accent_color'],width=2)
+        put(d,score if final else 'VS',(303,74,114,54),34,'white')
     else:
-        centered(d,title or 'FOOTBALL HIGHLIGHTS',(42,70,636,64),30,'#102336')
+        put(d,title or 'FOOTBALL HIGHLIGHTS',(42,70,636,64),30,style['text_color'])
     if final:
-        centered(d,'СОҢҒЫ ЕСЕП' if score!='?' else 'ЕСЕП АНЫҚТАЛМАДЫ',(35,430,650,50),27,'#e0bd77')
-        centered(d,score,(35,510,650,175),140,'white')
-        d.rounded_rectangle((270,739,450,744),2,fill='#dcb56b')
+        put(d,'СОҢҒЫ ЕСЕП' if score!='?' else 'ЕСЕП АНЫҚТАЛМАДЫ',(35,430,650,50),27,style['accent_color'])
+        put(d,score,(35,510,650,175),140,'white')
+        d.rounded_rectangle((270,739,450,744),2,fill=style['accent_color'])
     elif 'ҚАЙТАЛАУ' in label:
-        d.rounded_rectangle((252,163,468,200),12,fill=(13,32,50,225),outline='#dcb56b',width=1)
-        centered(d,label,(261,166,198,28),18,'#f5d795')
+        d.rounded_rectangle((252,163,468,200),12,fill=(13,32,50,225),outline=style['accent_color'],width=1)
+        put(d,label,(261,166,198,28),18,'#f5d795')
+    brand_mark(im,style)
     im.save(path)
 
 
@@ -99,20 +115,26 @@ def goal_sequence(folder,cancel=None):
     return folder/'%03d.png'
 
 
-def intro_layers(folder,title,logos):
+def intro_layers(folder,title,logos,style=None):
+    from channel_templates import style as validate_style
+    from functools import partial
+    from PIL import ImageColor
+    style=validate_style(style);put=partial(centered,font_path=style['font_file'] or None)
+    bg_color=ImageColor.getrgb(style['background_color'])
     """A navy/gold VS stage and two separate cards for slide-in animation."""
     folder=Path(folder);folder.mkdir(exist_ok=True)
     bg=Image.new('RGBA',(720,1280));d=ImageDraw.Draw(bg)
     for y in range(1280):
         glow=max(0,1-abs(y-580)/650)
-        d.line((0,y,720,y),fill=(round(7+6*glow),round(18+16*glow),round(31+23*glow),255))
+        d.line((0,y,720,y),fill=tuple(min(255,round(v+15*glow)) for v in bg_color)+(255,))
     for x in range(-800,1400,140):d.line((x,1280,x+600,0),fill=(211,175,101,15),width=1)
-    centered(d,'МАТЧТЫҢ ҮЗДІК СӘТТЕРІ',(45,239,630,55),27,'#ead29e')
-    d.rounded_rectangle((280,318,440,322),2,fill='#d5b06b')
-    d.ellipse((319,513,401,595),fill='#dcb56b')
+    put(d,'МАТЧТЫҢ ҮЗДІК СӘТТЕРІ',(45,239,630,55),27,'#ead29e')
+    d.rounded_rectangle((280,318,440,322),2,fill=style['accent_color'])
+    d.ellipse((319,513,401,595),fill=style['accent_color'])
     d.ellipse((322,516,398,592),fill='#0c2034')
-    centered(d,'VS',(328,526,64,52),31,'white')
-    centered(d,'FOOTBALL HIGHLIGHTS',(70,846,580,42),19,'#c9b78e')
+    put(d,'VS',(328,526,64,52),31,'white')
+    put(d,'FOOTBALL HIGHLIGHTS',(70,846,580,42),19,'#c9b78e')
+    brand_mark(bg,style)
     base=folder/'intro-base.png';bg.save(base)
     pair=parse_match_title(title)
     names=[pair['team_a'],pair['team_b']] if pair else ['КОМАНДА 1','КОМАНДА 2']
@@ -120,7 +142,7 @@ def intro_layers(folder,title,logos):
     for index,name in enumerate(names):
         layer=Image.new('RGBA',(720,1280));ld=ImageDraw.Draw(layer)
         x=30 if index==0 else 410
-        ld.rounded_rectangle((x,381,x+280,760),24,fill='#fafafa',outline='#dcb56b',width=3)
+        ld.rounded_rectangle((x,381,x+280,760),24,fill=style['panel_color'],outline=style['accent_color'],width=3)
         ld.ellipse((x+38,412,x+242,616),fill='#edf0f3')
         logo=logos[index] if index<len(logos) else None
         loaded=False
@@ -137,12 +159,12 @@ def intro_layers(folder,title,logos):
             color='#b82d36' if index==0 else '#236cb4'
             ld.polygon([(x+78,451),(x+202,451),(x+194,544),(x+140,585),(x+86,544)],fill=color)
             initials=''.join(w[0] for w in name.split() if w)[:2].upper()
-            centered(ld,initials,(x+91,469,98,77),42,'white')
+            put(ld,initials,(x+91,469,98,77),42,'white')
         # Two lines preserve legibility for long club names.
         words=name.upper().split();lines=[' '.join(words)]
         if len(lines[0])>18 and len(words)>1:
             cut=max(1,len(words)//2);lines=[' '.join(words[:cut]),' '.join(words[cut:])]
-        for j,line in enumerate(lines):centered(ld,line,(x+16,643+j*37,248,39),27,'#102336')
-        ld.rounded_rectangle((x+92,727,x+188,731),2,fill='#dcb56b')
+        for j,line in enumerate(lines):put(ld,line,(x+16,643+j*37,248,39),27,style['text_color'])
+        ld.rounded_rectangle((x+92,727,x+188,731),2,fill=style['accent_color'])
         path=folder/('intro-'+str(index)+'.png');layer.save(path);paths.append(path)
     return base,*paths

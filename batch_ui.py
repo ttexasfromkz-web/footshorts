@@ -5,6 +5,8 @@ import workflow
 
 
 LABELS={'queued':'Кезекте','running':'Өңделуде','done':'Дайын','error':'Қате','cancelled':'Тоқтатылды'}
+STAGES={'download':'Жүктеу','analyze':'Талдау','logos':'Логотип','render':'Монтаж','save':'Сақтау',
+        'new':'Дайындау','source':'Видео дайын','analysis':'Талдау дайын','ready':'Дайын'}
 
 
 class BatchWindow(tk.Toplevel):
@@ -29,6 +31,8 @@ class BatchWindow(tk.Toplevel):
         ttk.Button(frame,text='Таңдалғанды кезектен өшіру',command=self.remove_selected).pack(anchor='e',pady=3)
         ttk.Button(frame,text='Таңдалған жобаны ашу',command=self.open_selected).pack(anchor='e',pady=6)
         self.status=ttk.Label(frame,text='');self.status.pack(anchor='w');self.refresh()
+        ttk.Button(manage,text='Таңдалғанды басынан өңдеу',command=self.restart_selected).pack(side='left',padx=2)
+        self.timer=None;self.bind('<Destroy>',self.stop_timer);self.tick_status()
 
     def refresh(self,items=None):
         if not self.winfo_exists():return
@@ -36,11 +40,31 @@ class BatchWindow(tk.Toplevel):
         selected=self.table.selection()
         self.table.delete(*self.table.get_children())
         for item in items:
+            stage=item.get('stage',item.get('checkpoint',''));stage=STAGES.get(stage,stage)
             self.table.insert('', 'end',iid=item['id'],values=(LABELS.get(item['status'],item['status']),
-                item.get('title',''),item['url'],item.get('error','') or item.get('directory','')))
+                item.get('title',''),item['url'],item.get('error','') or
+                (str(round(item.get('progress',0)))+'% • '+stage+' • '+item.get('directory',''))))
         if selected and self.table.exists(selected[0]):self.table.selection_set(selected[0])
         done=sum(i['status']=='done' for i in items);errors=sum(i['status']=='error' for i in items)
-        self.status.configure(text=f'Барлығы: {len(items)} • Дайын: {done} • Қате: {errors}')
+        self.update_summary()
+
+    def update_summary(self):
+        s=self.model.summary();eta=s['eta_seconds']
+        remaining=('Шамамен қалғаны: '+f'{int(eta)//60:02}:{int(eta)%60:02}'+' (дайын видеолардың орташа уақытымен)') if eta is not None else 'Қалған уақыт: алғашқы видео бойынша есептелуде' if s['estimating'] else 'Өңделетін тапсырма жоқ'
+        self.status.configure(text=f"Барлығы: {s['total']} • Дайын: {s['done']} • Қате: {s['errors']} • {remaining}")
+
+    def tick_status(self):
+        self.update_summary()
+        if self.model.running:self.refresh()
+        self.timer=self.after(1000,self.tick_status)
+
+    def stop_timer(self,event):
+        if event.widget==self and self.timer:
+            self.after_cancel(self.timer);self.timer=None
+
+    def restart_selected(self):
+        try:self.model.restart(set(self.table.selection()));self.refresh()
+        except Exception as e:messagebox.showerror('Кезек',str(e),parent=self)
 
     def add(self):
         try:self.model.add(self.urls.get('1.0','end'));self.urls.delete('1.0','end');self.refresh()
@@ -69,9 +93,16 @@ class BatchWindow(tk.Toplevel):
             if not pending:raise ValueError('Кезекте видео жоқ. Сілтеме немесе видео файлын қосыңыз.')
             base=self.owner.app_base
             def process(url):
-                local=next((i.get('source_type')=='file' for i in self.model.snapshot() if i['url']==url),False)
+                item=next(i for i in self.model.snapshot() if i['url']==url and i['status']=='running')
+                def log(message):self.model.observe(url,message);self.owner.log(message)
+                def checkpoint(info):self.model.checkpoint(url,info)
+                saved=workflow.resolve_checkpoint(base,item)
+                if saved:return workflow.resume_project(saved,log=log,cancel=self.owner.cancel_event,
+                    on_source=lambda info:self.owner.jobs.put(('project_source',info)),on_checkpoint=checkpoint)
+                if item.get('project_id'):raise FileNotFoundError('Сақталған жоба табылмады. «Басынан өңдеу» таңдаңыз.')
+                local=item.get('source_type')=='file'
                 return workflow.create_project(base,url='' if local else url,local_video=url if local else '',music=music,settings=settings,
-                    log=self.owner.log,cancel=self.owner.cancel_event,
+                    log=log,cancel=self.owner.cancel_event,on_checkpoint=checkpoint,
                     on_source=lambda info:self.owner.jobs.put(('project_source',info)))
             def job():
                 return self.model.run(process,self.owner.cancel_event,
@@ -83,7 +114,7 @@ class BatchWindow(tk.Toplevel):
         self.refresh()
         if results:self.owner.project_ready(results[-1])
         items=self.model.snapshot()
-        self.owner.status.set('Кезек аяқталды. Дайын: '+str(sum(i['status']=='done' for i in items))+
+        self.owner.status.set(('Кезек тоқтатылды. Дайын: ' if self.owner.cancel_event.is_set() else 'Кезек аяқталды. Дайын: ')+str(sum(i['status']=='done' for i in items))+
                               ' • Қате: '+str(sum(i['status']=='error' for i in items)))
         self.deiconify()
 

@@ -52,6 +52,7 @@ class App(tk.Tk):
         self.cookie_label=tk.StringVar(value='Cookies файлы таңдалмаған')
         self.intro=tk.BooleanVar(value=True)
         self.show_final=tk.BooleanVar(value=True)
+        self.channel_style={}
         self.action_camera=tk.BooleanVar(value=False)
         self.replays=tk.BooleanVar(value=True);self.replay_speed=tk.StringVar(value='0.5')
         self.score=tk.StringVar();self.target=tk.StringVar(value='180')
@@ -84,6 +85,7 @@ class App(tk.Tk):
         self.brand_small=self.brand_icon.subsample(4)
         ttk.Label(brand,image=self.brand_small).pack(side='left',padx=(0,8))
         ttk.Label(brand,text='FOOTBALL SHORTS',font=('Segoe UI',19,'bold')).pack(side='left')
+        ttk.Button(brand,text='Арна шаблондары…',command=self.open_channel_templates).pack(side='right')
         ttk.Label(frame,text='Компьютерде өңдеу • Соңғы есепті тексеру • 9:16 MP4',font=('Segoe UI',10)).pack(anchor='w',pady=(0,5))
         yt=ttk.LabelFrame(frame,text='Сілтемені қойыңыз → бір батырмамен дайын MP4 + TXT',padding=6);yt.pack(fill='x',pady=(0,5))
         ttk.Entry(yt,textvariable=self.youtube).pack(side='left',fill='x',expand=True)
@@ -234,7 +236,15 @@ class App(tk.Tk):
         # Never delete while an editor, worker or update is active.
         if not (self.busy or self.review_open or self.update_installing):
             try:
-                removed,errors=retention.cleanup(BASE,retention.load_days(BASE),protected=[self.project_dir])
+                protected=[self.project_dir]
+                if self.batch_model is not None:items=self.batch_model.snapshot()
+                elif (BASE/'queue.json').is_file():items=json.loads((BASE/'queue.json').read_text(encoding='utf-8')).get('items',[])
+                else:items=[]
+                for item in items:
+                    if item.get('status')!='done':
+                        directory=workflow.resolve_checkpoint(BASE,item)
+                        if directory:protected.append(directory)
+                removed,errors=retention.cleanup(BASE,retention.load_days(BASE),protected=protected)
                 for name in removed:self.log('Мерзімі өткен жоба өшірілді: '+name)
                 for error in errors:self.log('Жоба тазаланбады: '+error)
                 if removed:self.refresh_projects()
@@ -264,6 +274,7 @@ class App(tk.Tk):
             self.crop.set(str(settings.get('crop_top',.15)*100));self.roi.set(', '.join(str(v*100) for v in settings.get('roi',[0,0,.5,.17])))
             self.intro.set(settings.get('intro',True))
             self.show_final.set(settings.get('show_final',True))
+            self.channel_style=settings.get('channel_style',{})
             self.action_camera.set(settings.get('action_camera',False))
             self.use_ocr.set(settings.get('use_ocr',True));self.replays.set(settings.get('replays',True));self.replay_speed.set(str(settings.get('replay_speed',.5)))
         except Exception as e:self.log('Баптауларды қалпына келтіру: '+str(e))
@@ -317,17 +328,30 @@ class App(tk.Tk):
         except ValueError as e:messagebox.showerror('Cookies файлы',str(e),parent=self);return
         self.youtube_cookie_file.set(path);self.cookie_label.set(Path(path).name);self.youtube_login.set('Cookies файлы')
 
-    def settings(self):
+    def settings(self,validate_auth=True):
         roi=tuple(float(x.strip())/100 for x in self.roi.get().split(','))
         if len(roi)!=4 or any(v<0 for v in roi) or roi[2]<=0 or roi[3]<=0 or roi[0]+roi[2]>1 or roi[1]+roi[3]>1:
             raise ValueError('Есеп аймағы: 0, 0, 50, 17 сияқты пайызбен жазыңыз.')
         mv=float(self.music_volume.get())/100;sv=float(self.source_volume.get())/100;crop=float(self.crop.get())/100
         if not 0<=mv<=1 or not 0<=sv<=1 or not 0<=crop<=.35:raise ValueError('Дыбыс: 0–100%, қию: 0–35%.')
         cookie_file=self.youtube_cookie_file.get() if self.youtube_login.get()=='Cookies файлы' else ''
-        if self.youtube_login.get()=='Cookies файлы' and not cookie_file:raise ValueError('Cookies файлын таңдаңыз.')
+        if validate_auth and self.youtube_login.get()=='Cookies файлы' and not cookie_file:raise ValueError('Cookies файлын таңдаңыз.')
         return dict(youtube_browser='chrome' if self.youtube_login.get()=='Chrome' else '',youtube_cookie_file=cookie_file,
                     target=int(self.target.get()),quality=int(self.quality.get()),roi=roi,use_ocr=self.use_ocr.get(),
-                    music_level=mv,source_level=sv,crop_top=crop,replays=self.replays.get(),replay_speed=float(self.replay_speed.get()),action_camera=self.action_camera.get(),intro=self.intro.get(),show_final=self.show_final.get())
+                    music_level=mv,source_level=sv,crop_top=crop,replays=self.replays.get(),replay_speed=float(self.replay_speed.get()),action_camera=self.action_camera.get(),intro=self.intro.get(),show_final=self.show_final.get(),channel_style=dict(self.channel_style))
+
+    def open_channel_templates(self):
+        from channel_ui import ChannelWindow
+        ChannelWindow(self)
+
+    def apply_channel_settings(self,settings):
+        self.target.set(str(settings.get('target',180)));self.quality.set(str(settings.get('quality',1080)))
+        self.roi.set(', '.join(str(v*100) for v in settings.get('roi',[0,0,.5,.17])))
+        self.crop.set(str(settings.get('crop_top',.15)*100))
+        self.music_volume.set(round(settings.get('music_level',.18)*100));self.source_volume.set(round(settings.get('source_level',.2)*100))
+        self.use_ocr.set(settings.get('use_ocr',True));self.replays.set(settings.get('replays',True));self.replay_speed.set(str(settings.get('replay_speed',.5)))
+        self.intro.set(settings.get('intro',True));self.show_final.set(settings.get('show_final',True));self.action_camera.set(settings.get('action_camera',False))
+        self.channel_style=dict(settings.get('channel_style',{}))
 
     def refresh_projects(self):
         self.project_paths=workflow.recent_projects(BASE)
@@ -390,6 +414,7 @@ class App(tk.Tk):
         self.music_volume.set(round(settings['music_level']*100));self.source_volume.set(round(settings['source_level']*100))
         self.roi.set(', '.join(str(x*100) for x in settings['roi']))
         self.show_final.set(settings['show_final']);self.intro.set(settings['intro']);self.action_camera.set(settings['action_camera'])
+        self.channel_style=workflow.project_style(p)
         self.replays.set(settings['replays']);self.replay_speed.set(str(settings['replay_speed']));self.use_ocr.set(settings['use_ocr'])
         self.project_ready(workflow.output_files(p))
 
@@ -597,6 +622,7 @@ class App(tk.Tk):
             self.music_volume.set(round(settings['music_level']*100));self.source_volume.set(round(settings['source_level']*100))
             self.roi.set(', '.join(str(x*100) for x in settings['roi']))
             self.show_final.set(settings['show_final']);self.intro.set(settings['intro'])
+            self.channel_style=workflow.project_style(p)
             self.action_camera.set(settings['action_camera'])
             self.replays.set(settings['replays']);self.replay_speed.set(str(settings['replay_speed']));self.use_ocr.set(settings['use_ocr'])
             self.project_ready(workflow.output_files(p))

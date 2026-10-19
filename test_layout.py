@@ -9,6 +9,42 @@ import app
 
 @unittest.skipUnless(os.environ.get('FOOTSHORTS_GUI_TESTS')=='1','Tk layout integration')
 class CompactLayoutTests(unittest.TestCase):
+    def test_channel_template_apply_keeps_login_and_restores_video_settings(self):
+        from channel_ui import ChannelWindow
+        with tempfile.TemporaryDirectory() as d,patch('app.BASE',Path(d)),patch.object(app.App,'check_updates'),patch('updater.mark_healthy'):
+            Path(d,'version.json').write_text('{"version":"3.0.0"}')
+            ui=app.App();window=None
+            try:
+                ui.music.set('');ui.youtube_login.set('Chrome');ui.intro.set(False);ui.show_final.set(False)
+                window=ChannelWindow(ui);window.name.set('ExampleChannel');window.values['accent_color'].set('#00ff00');window.save()
+                ui.intro.set(True);ui.show_final.set(True);window.apply();window=None
+                self.assertFalse(ui.intro.get());self.assertFalse(ui.show_final.get())
+                self.assertEqual(ui.youtube_login.get(),'Chrome');self.assertEqual(ui.channel_style['accent_color'],'#00ff00')
+            finally:
+                if window:window.destroy()
+                for ident in ui.tk.call('after','info'):ui.after_cancel(ident)
+                ui.destroy()
+
+    def test_timeline_mouse_trim_and_reorder_are_undoable(self):
+        import tkinter as tk
+        from clip_timeline import ClipTimeline
+        from review_model import ReviewModel
+        root=tk.Tk();root.geometry('600x220');model=ReviewModel([dict(start=0,end=10),dict(start=20,end=30)],40)
+        errors=[];timeline=ClipTimeline(root,model,lambda i:None,lambda i:None,errors.append);timeline.pack(fill='x')
+        try:
+            root.update();a,b=timeline.blocks[0]
+            timeline.canvas.event_generate('<ButtonPress-1>',x=int(a+3),y=40)
+            timeline.canvas.event_generate('<B1-Motion>',x=int(a+30),y=40)
+            timeline.canvas.event_generate('<ButtonRelease-1>',x=int(a+30),y=40);root.update()
+            self.assertGreater(model.clips[0]['start'],0);model.undo();timeline.redraw()
+            a,b=timeline.blocks[0];x=(a+b)/2;target=timeline.blocks[1][1]-10
+            timeline.canvas.event_generate('<ButtonPress-1>',x=int(x),y=40)
+            timeline.canvas.event_generate('<B1-Motion>',x=int(target),y=40)
+            timeline.canvas.event_generate('<ButtonRelease-1>',x=int(target),y=40);root.update()
+            self.assertEqual([c['start'] for c in model.clips],[20,0]);model.undo()
+            self.assertEqual([c['start'] for c in model.clips],[0,20]);self.assertFalse(errors)
+        finally:root.destroy()
+
     def test_wide_columns_and_narrow_scroll_keep_score_reachable(self):
         with tempfile.TemporaryDirectory() as d,patch('app.BASE',Path(d)),patch.object(app.App,'check_updates'),patch('updater.mark_healthy'):
             Path(d,'version.json').write_text('{"version":"1.9.2"}')

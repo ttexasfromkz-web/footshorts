@@ -164,6 +164,32 @@ class WindowsReviewTests(unittest.TestCase):
                 self.assertEqual(sum(len(c.args)>4 and c.args[4] for c in card.call_args_list),1 if enabled else 0)
             self.assertAlmostEqual(core.metadata(output)['duration'],5 if enabled else 2,delta=.15)
 
+    def test_montage_reorder_is_visible_in_encoded_video(self):
+        source=self.folder/'two-colors.mp4';output=self.folder/'reordered.mp4'
+        core.run([core.ffmpeg(),'-v','error','-f','lavfi','-i','color=c=red:s=320x180:r=30:d=2',
+                  '-f','lavfi','-i','color=c=blue:s=320x180:r=30:d=2','-filter_complex','[0:v][1:v]concat=n=2:v=1:a=0[v]',
+                  '-map','[v]','-c:v','libx264','-pix_fmt','yuv420p','-y',source])
+        core.render(str(source),None,[dict(start=2,end=4,reason='Шабуыл'),dict(start=0,end=2,reason='Шабуыл')],output,
+                    intro=False,show_final=False,replays=False,action_camera=False,crop_top=0,max_seconds=10,log=lambda _:None)
+        cap=cv2.VideoCapture(str(output))
+        try:
+            for t,channel in [(.5,0),(2.5,2)]:
+                cap.set(cv2.CAP_PROP_POS_MSEC,t*1000);ok,frame=cap.read();self.assertTrue(ok)
+                color=frame[600:660,320:400].mean(axis=(0,1));self.assertGreater(color[channel],150)
+        finally:cap.release()
+
+    def test_uncertain_automatic_camera_keeps_entire_pitch(self):
+        output=self.folder/'camera-fallback.mp4'
+        with patch('camera.track_details',return_value=dict(points=[(0,.9)],safe_crop=False)):
+            core.render(str(self.video),None,[dict(start=0,end=2,reason='Шабуыл')],output,intro=False,
+                        show_final=False,replays=False,action_camera=True,crop_top=0,max_seconds=10,log=lambda _:None)
+        cap=cv2.VideoCapture(str(output))
+        try:
+            cap.set(cv2.CAP_PROP_POS_MSEC,500);ok,frame=cap.read();self.assertTrue(ok)
+            self.assertGreater(frame[600:660,80:140,2].mean(),150)
+            self.assertGreater(frame[600:660,580:640,0].mean(),150)
+        finally:cap.release()
+
     def test_no_zoom_keeps_both_sides_even_with_saved_manual_zoom(self):
         output=self.folder/'no-zoom-export.mp4'
         clip=dict(start=0,end=4,kind='highlight',

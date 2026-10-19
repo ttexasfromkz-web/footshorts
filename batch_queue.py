@@ -4,14 +4,17 @@ from pathlib import Path
 import threading
 import uuid
 import json
+import time
+from progress import Progress
 import core
 import downloader
 import updater
 
 
 class BatchQueue:
-    def __init__(self,path):
+    def __init__(self,path,clock=time.monotonic):
         self.path=Path(path);self.lock=threading.RLock();self.items=[];self.running=False
+        self.clock=clock;self.active=None;self.started=None;self.initial_elapsed=0.;self.last_saved=0.;self.progress=None
         if self.path.is_file():
             data=json.loads(self.path.read_text(encoding='utf-8'))
             self.items=data.get('items',[])
@@ -24,6 +27,39 @@ class BatchQueue:
 
     def snapshot(self):
         with self.lock:return copy.deepcopy(self.items)
+
+    def checkpoint(self,url,info):
+        with self.lock:
+            item=next(i for i in self.items if i['url']==url and i['status']=='running')
+            item.update(directory=info['directory'],project_id=info['project_id'],checkpoint=info['stage'],title=info.get('title',item.get('title','')))
+            self.save()
+
+    def observe(self,url,message):
+        with self.lock:
+            if self.active is None or self.active['url']!=url:return
+            self.progress.observe(message)
+            self.active.update(progress=self.progress.snapshot()['percent'],stage=self.progress.stage,
+                               elapsed_seconds=self.initial_elapsed+max(0,self.clock()-self.started))
+            if self.clock()-self.last_saved>=1:self.save();self.last_saved=self.clock()
+
+    def summary(self):
+        with self.lock:
+            durations=[i.get('elapsed_seconds',0) for i in self.items if i['status']=='done' and i.get('elapsed_seconds',0)>0]
+            pending=sum(i['status']=='queued' for i in self.items)
+            remaining=pending+(max(0,1-self.active.get('progress',0)/100) if self.active else 0)
+            eta=(sum(durations)/len(durations))*remaining if durations else None
+            return dict(total=len(self.items),done=sum(i['status']=='done' for i in self.items),
+                        errors=sum(i['status']=='error' for i in self.items),pending=pending,eta_seconds=eta,
+                        estimating=bool(remaining and not durations))
+
+    def restart(self,ids):
+        with self.lock:
+            if self.running:raise ValueError('Кезек аяқталған соң қайталаңыз.')
+            for item in self.items:
+                if item['id'] in ids:
+                    for key in ('project_id','checkpoint','progress','elapsed_seconds','stage'):item.pop(key,None)
+                    item.update(status='queued',error='',directory='')
+            self.save()
 
     def add(self,text):
         with self.lock:
@@ -83,6 +119,8 @@ class BatchQueue:
             for item in self.items:
                 if cancel.is_set():break
                 if item['status']!='queued':continue
+                self.active=item;self.started=self.clock();self.initial_elapsed=item.get('elapsed_seconds',0)
+                self.progress=Progress(self.clock)
                 item.update(status='running',error='');self.save();notify(self.snapshot())
                 try:
                     result=process(item['url'])
@@ -90,9 +128,12 @@ class BatchQueue:
                     results.append(result)
                 except core.Cancelled:
                     item.update(status='cancelled',error='Пайдаланушы тоқтатты.')
+                    item['elapsed_seconds']=self.initial_elapsed+max(0,self.clock()-self.started)
                     self.save();notify(self.snapshot());break
                 except Exception as e:item.update(status='error',error=str(e))
+                item['elapsed_seconds']=self.initial_elapsed+max(0,self.clock()-self.started)
+                if item['status']=='done':item['progress']=100
                 self.save();notify(self.snapshot())
         finally:
-            with self.lock:self.running=False;self.save()
+            with self.lock:self.running=False;self.active=None;self.started=None;self.save()
         return results

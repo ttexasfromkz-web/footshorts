@@ -207,6 +207,14 @@ def audio_candidates(energy,duration):
                  reason='Дыбыстағы эмоция — тексеріңіз') for i in chosen]
 
 
+def ocr_engine():
+    # Disable ONNX Runtime telemetry before any OCR inference session is created.
+    import onnxruntime
+    onnxruntime.disable_telemetry_events()
+    from rapidocr_onnxruntime import RapidOCR
+    return RapidOCR(intra_op_num_threads=2,inter_op_num_threads=1)
+
+
 def analyze(video, target=180, roi=(0,0,.5,.17), use_ocr=True, log=print, cancel=None):
     """Use score changes and crowd/commentary energy; not semantic goal recognition."""
     log('@progress:analyze:0:Видеоны талдау')
@@ -216,9 +224,8 @@ def analyze(video, target=180, roi=(0,0,.5,.17), use_ocr=True, log=print, cancel
     if use_ocr:
         try:
             import cv2
-            from rapidocr_onnxruntime import RapidOCR
             log('Экрандағы есепті оқу…')
-            engine = RapidOCR(intra_op_num_threads=2, inter_op_num_threads=1)
+            engine = ocr_engine()
             cap = cv2.VideoCapture(str(video))
             try:
                 # Detailed sampling near the end helps avoid using an earlier score.
@@ -332,9 +339,9 @@ def validate_clips(clips,duration):
         raise ValueError('Жалпы ұзақтық 180 секундтан аспасын.')
     return total
 
-def make_card(path, title, score, label, final_card=False):
+def make_card(path, title, score, label, final_card=False,style=None):
     from visuals import card
-    card(path,title,score,label,final_card)
+    card(path,title,score,label,final_card,style=style)
 
 def make_goal_image(path):
     from visuals import goal_frame
@@ -342,7 +349,9 @@ def make_goal_image(path):
 
 
 def render(video,music,clips,output,title='',score='',music_level=.18,source_level=.20,
-           crop_top=.15,show_final=True,log=print,cancel=None,replays=True,replay_speed=.5,max_seconds=180,goal_animation=True,action_camera=False,intro=True,logo_dir=None):
+           crop_top=.15,show_final=True,log=print,cancel=None,replays=True,replay_speed=.5,max_seconds=180,goal_animation=True,action_camera=False,intro=True,logo_dir=None,channel_style=None):
+    from channel_templates import style as validate_style
+    channel_style=validate_style(channel_style)
     info=metadata(video)
     validate_clips(clips,info['duration'])
     from review_model import validate_camera
@@ -371,7 +380,7 @@ def render(video,music,clips,output,title='',score='',music_level=.18,source_lev
             if cancel and cancel.is_set():raise Cancelled()
             log('@progress:logos:1:Логотиптер дайын')
             log('@progress:render:0:3 секундтық кіріспе')
-            base,left,right=intro_layers(tmp,title,badges)
+            base,left,right=intro_layers(tmp,title,badges,style=channel_style)
             intro_part=tmp/'intro.mp4'
             log('3 секундтық матч кіріспесі…')
             intro_filter="[0:v][1:v]overlay=x='-720*pow(1-clip(t/0.75,0,1),3)':y=0[a];[a][2:v]overlay=x='720*pow(1-clip(t/0.75,0,1),3)':y=0,fade=t=in:d=0.12,fade=t=out:st=2.8:d=0.2,setsar=1,format=yuv420p[v]"
@@ -399,19 +408,24 @@ def render(video,music,clips,output,title='',score='',music_level=.18,source_lev
             part=tmp/f'{i:03}.mp4';card=tmp/f'{i:03}.png'
             is_replay=c.get('is_replay',False)
             speed=float(c.get('speed',1));out_duration=segment_duration(c)
-            make_card(card,title,'',f'ҚАЙТАЛАУ • {speed:g}×' if is_replay else 'ҮЗДІК СӘТТЕР')
-            if action_camera:
+            make_card(card,title,'',f'ҚАЙТАЛАУ • {speed:g}×' if is_replay else 'ҮЗДІК СӘТТЕР',style=channel_style)
+            use_crop=action_camera
+            if action_camera and not c.get('focus_points'):
+                import camera
+                key=(c['start'],c['end'],c.get('goal_at'),c.get('zoom',1))
+                if key not in tracking_cache:
+                    log('Доптың қозғалысы мен кадр сенімділігін тексеру…')
+                    tracking_cache[key]=camera.track_details(video,c['start'],c['end'],crop_top,cancel,c.get('goal_at'),c.get('zoom',1))
+                if not tracking_cache[key]['safe_crop']:
+                    use_crop=False;log('Доп бағыты сенімсіз — осы үзіндіде толық алаң сақталды.')
+            if use_crop:
                 import camera
                 _,_,_,portrait_w,portrait_h=camera.geometry(info['width'],info['height'],crop_top,c.get('zoom',1))
                 if c.get('focus_points'):
                     xs,ys=camera.manual_tracks(c,info['height'],crop_y,crop_h)
                     y=camera.crop_expression(ys,crop_h,portrait_h,speed)
                 else:
-                    key=(c['start'],c['end'])
-                    if key not in tracking_cache:
-                        log('Ойын аймағын қадағалау…')
-                        tracking_cache[key]=camera.track(video,c['start'],c['end'],crop_top,cancel)
-                    xs=tracking_cache[key];y='(ih-oh)/2'
+                    xs=tracking_cache[key]['points'];y='(ih-oh)/2'
                 x=camera.crop_expression(xs,crop_w,portrait_w,speed)
                 vf=f"[0:v]setpts=(PTS-STARTPTS)/{speed},crop={crop_w}:{crop_h}:0:{crop_y},crop={portrait_w}:{portrait_h}:x='{x}':y='{y}',scale=720:1280,fps=30[v0];[v0][1:v]overlay=0:0,setsar=1,format=yuv420p[carded]"
             else:
@@ -454,8 +468,8 @@ def render(video,music,clips,output,title='',score='',music_level=.18,source_lev
         if score and show_final:
             log('Соңғы есеп кадры…')
             card=tmp/'final.png';part=tmp/'final.mp4'
-            make_card(card,title,score,'',True)
-            run([ffmpeg(),'-v','error','-f','lavfi','-i','color=c=0x081a20:s=720x1280:r=30:d=3',
+            make_card(card,title,score,'',True,style=channel_style)
+            run([ffmpeg(),'-v','error','-f','lavfi','-i','color=c=0x'+channel_style['background_color'][1:]+':s=720x1280:r=30:d=3',
                  '-i',card,'-f','lavfi','-i','anullsrc=r=48000:cl=stereo','-filter_complex',
                  '[0:v][1:v]overlay=0:0,setsar=1,format=yuv420p[v]','-map','[v]','-map','2:a',
                  '-t','3','-c:v','libx264','-preset','fast','-crf','21','-threads','2',

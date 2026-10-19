@@ -39,6 +39,8 @@ class ReviewModel:
         g=candidate.get('goal_at')
         if g is not None and not candidate['start']<=float(g)<candidate['end']:
             raise ValueError('Гол белгісі шекарадан тыс қалды. Алдымен гол белгісін түзетіңіз.')
+        if any(not candidate['start']<=float(t)<candidate['end'] for t in candidate.get('goal_times',[])):
+            raise ValueError('Біріктірілген голдың бірі шекарадан тыс қалды.')
         self.history.append(copy.deepcopy(self.clips));self.history=self.history[-50:];self.clips[index]=candidate
 
     def trim(self,index,start,end):
@@ -53,11 +55,20 @@ class ReviewModel:
         self.change(index,edit)
 
     def mark_goal(self,index,time):
-        self.change(index,lambda c:c.update(goal_at=float(time),kind='goal',reason='Гол'))
+        def edit(c):
+            if c.get('goal_times'):c['goal_times']=sorted({float(time),*(t for t in c['goal_times'] if t!=c.get('goal_at'))})
+            c.update(goal_at=float(time),kind='goal',reason='Гол')
+        self.change(index,edit)
 
     def clear_goal(self,index):
-        def edit(c):c.pop('goal_at',None);c.update(kind='highlight',reason='Қызықты сәт')
+        def edit(c):c.pop('goal_at',None);c.pop('goal_times',None);c.update(kind='highlight',reason='Қызықты сәт')
         self.change(index,edit)
+
+    def move(self,index,destination):
+        if not 0<=index<len(self.clips) or not 0<=destination<len(self.clips):raise ValueError('Үзінді орны қате.')
+        if index==destination:return
+        self.history.append(copy.deepcopy(self.clips));self.history=self.history[-50:]
+        self.clips.insert(destination,self.clips.pop(index))
 
     def focus(self,index,time,x,y):
         def edit(c):
