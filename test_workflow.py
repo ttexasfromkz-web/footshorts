@@ -28,6 +28,20 @@ class WorkflowTests(unittest.TestCase):
             self.assertFalse(render.call_args.kwargs['action_camera'])
 
 
+    def test_final_score_toggle_persists_and_reaches_export_without_reanalysis(self):
+        with tempfile.TemporaryDirectory() as d,patch('workflow.downloader.download',side_effect=self.fake_download) as download,patch('workflow.core.analyze',side_effect=self.fake_analyze) as analyze,patch('workflow.core.render',side_effect=self.fake_render) as render:
+            result=workflow.create_project(d,'https://youtu.be/so5hJv_2cVQ',settings={'show_final':False},log=lambda _:None)
+            self.assertFalse(render.call_args.kwargs['show_final'])
+            self.assertFalse(workflow.load_project(result['directory'])['settings']['show_final'])
+            workflow.rerender(result['directory'],'1:3',settings={'show_final':True},log=lambda _:None)
+            self.assertTrue(render.call_args.kwargs['show_final'])
+            project=workflow.load_project(result['directory']);project['settings'].pop('show_final');workflow.save_project(project)
+            workflow.render_project(project,log=lambda _:None)
+            self.assertTrue(render.call_args.kwargs['show_final'])
+            workflow.rerender(result['directory'],'',settings={'show_final':False},log=lambda _:None)
+            self.assertFalse(render.call_args.kwargs['show_final'])
+            self.assertEqual(download.call_count,1);self.assertEqual(analyze.call_count,1)
+
     def test_selected_login_reaches_downloader(self):
         with tempfile.TemporaryDirectory() as d,patch('workflow.downloader.download') as download,patch('workflow.core.analyze',side_effect=self.fake_analyze),patch('workflow.core.render',side_effect=self.fake_render):
             download.side_effect=lambda *args,**kwargs:self.fake_download(*args)

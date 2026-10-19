@@ -154,6 +154,16 @@ class WindowsReviewTests(unittest.TestCase):
                 self.assertLess(color[0] if red else color[2],80)
         finally:cap.release()
 
+    def test_final_score_toggle_changes_actual_video_ending(self):
+        for enabled in (True,False):
+            output=self.folder/('final-score-'+str(enabled)+'.mp4')
+            with patch('core.make_card',wraps=core.make_card) as card:
+                core.render(str(self.video),None,[dict(start=0,end=2,reason='audio')],output,
+                            title='A — B',score='2:1',crop_top=0,intro=False,show_final=enabled,
+                            replays=False,action_camera=False,max_seconds=10,log=lambda _:None)
+                self.assertEqual(sum(len(c.args)>4 and c.args[4] for c in card.call_args_list),1 if enabled else 0)
+            self.assertAlmostEqual(core.metadata(output)['duration'],5 if enabled else 2,delta=.15)
+
     def test_no_zoom_keeps_both_sides_even_with_saved_manual_zoom(self):
         output=self.folder/'no-zoom-export.mp4'
         clip=dict(start=0,end=4,kind='highlight',

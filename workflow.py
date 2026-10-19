@@ -12,7 +12,7 @@ import downloader
 import publishing
 
 DEFAULTS=dict(target=180,roi=[0,0,.5,.17],use_ocr=True,music_level=.18,
-              source_level=.2,crop_top=.15,replays=True,replay_speed=.5,action_camera=False,intro=True)
+              source_level=.2,crop_top=.15,replays=True,replay_speed=.5,action_camera=False,intro=True,show_final=True)
 
 
 def save_project(project):
@@ -137,7 +137,7 @@ def render_project(project,log=print,cancel=None):
                 music_level=settings['music_level'],source_level=settings['source_level'],
                 crop_top=settings['crop_top'],replays=settings['replays'],replay_speed=settings['replay_speed'],
                 max_seconds=settings['target'],action_camera=settings['action_camera'],intro=settings['intro'],
-                logo_dir=folder/'source/logos',log=log,cancel=cancel)
+                show_final=settings['show_final'],logo_dir=folder/'source/logos',log=log,cancel=cancel)
             log('@progress:save:0.8:YouTube мәтіні мен видеоны сақтау')
             text.write_text(project_text(project),encoding='utf-8-sig')
             if cancel and cancel.is_set():raise core.Cancelled()
@@ -211,8 +211,9 @@ def create_project(base,url='',local_video='',music='',settings=None,title_hint=
 def rerender(path,score,title=None,clips=None,settings=None,log=print,cancel=None):
     project=load_project(path)
     normalized=score.strip().replace('-',':')
-    if not re.fullmatch(r'\d{1,2}:\d{1,2}',normalized):raise ValueError('Дұрыс есепті 1:3 түрінде енгізіңіз.')
-    project['score']=normalized;project['score_source']='manual'
+    effective={**DEFAULTS,**project.get('settings',{}),**(settings or {})}
+    if (normalized or effective['show_final']) and not re.fullmatch(r'\d{1,2}:\d{1,2}',normalized):raise ValueError('Дұрыс есепті 1:3 түрінде енгізіңіз.')
+    project['score']=normalized or None;project['score_source']='manual' if normalized else 'unknown'
     if title and title.strip():project['title']=title.strip()
     if clips is not None:project['clips']=clips
     if settings:project['settings'].update(settings)

@@ -51,6 +51,7 @@ class App(tk.Tk):
         self.youtube_login=tk.StringVar(value='Аккаунтсыз');self.youtube_cookie_file=tk.StringVar()
         self.cookie_label=tk.StringVar(value='Cookies файлы таңдалмаған')
         self.intro=tk.BooleanVar(value=True)
+        self.show_final=tk.BooleanVar(value=True)
         self.action_camera=tk.BooleanVar(value=False)
         self.replays=tk.BooleanVar(value=True);self.replay_speed=tk.StringVar(value='0.5')
         self.score=tk.StringVar();self.target=tk.StringVar(value='180')
@@ -145,6 +146,8 @@ class App(tk.Tk):
         ttk.Label(r,text='Жоғарыдан қию %').pack(side='left',padx=(8,4))
         ttk.Spinbox(r,from_=0,to=35,textvariable=self.crop,width=5).pack(side='left')
         ttk.Checkbutton(opt,text='3 секундтық кіріспе: логотиптер мен атаулар',variable=self.intro).pack(anchor='w',pady=2)
+        self.show_final_btn=ttk.Checkbutton(opt,text='Видео соңында есепті көрсету',variable=self.show_final)
+        self.show_final_btn.pack(anchor='w',pady=2)
         r=ttk.Frame(opt);r.pack(fill='x',pady=2)
         ttk.Button(r,text='1-команда логосы…',command=lambda:self.pick_logo(0)).pack(side='left')
         ttk.Button(r,text='2-команда логосы…',command=lambda:self.pick_logo(1)).pack(side='left',padx=6)
@@ -260,6 +263,7 @@ class App(tk.Tk):
             self.music_volume.set(round(settings.get('music_level',.18)*100));self.source_volume.set(round(settings.get('source_level',.2)*100))
             self.crop.set(str(settings.get('crop_top',.15)*100));self.roi.set(', '.join(str(v*100) for v in settings.get('roi',[0,0,.5,.17])))
             self.intro.set(settings.get('intro',True))
+            self.show_final.set(settings.get('show_final',True))
             self.action_camera.set(settings.get('action_camera',False))
             self.use_ocr.set(settings.get('use_ocr',True));self.replays.set(settings.get('replays',True));self.replay_speed.set(str(settings.get('replay_speed',.5)))
         except Exception as e:self.log('Баптауларды қалпына келтіру: '+str(e))
@@ -323,7 +327,7 @@ class App(tk.Tk):
         if self.youtube_login.get()=='Cookies файлы' and not cookie_file:raise ValueError('Cookies файлын таңдаңыз.')
         return dict(youtube_browser='chrome' if self.youtube_login.get()=='Chrome' else '',youtube_cookie_file=cookie_file,
                     target=int(self.target.get()),quality=int(self.quality.get()),roi=roi,use_ocr=self.use_ocr.get(),
-                    music_level=mv,source_level=sv,crop_top=crop,replays=self.replays.get(),replay_speed=float(self.replay_speed.get()),action_camera=self.action_camera.get(),intro=self.intro.get())
+                    music_level=mv,source_level=sv,crop_top=crop,replays=self.replays.get(),replay_speed=float(self.replay_speed.get()),action_camera=self.action_camera.get(),intro=self.intro.get(),show_final=self.show_final.get())
 
     def refresh_projects(self):
         self.project_paths=workflow.recent_projects(BASE)
@@ -385,7 +389,7 @@ class App(tk.Tk):
         self.target.set(str(settings['target']));self.crop.set(str(settings['crop_top']*100))
         self.music_volume.set(round(settings['music_level']*100));self.source_volume.set(round(settings['source_level']*100))
         self.roi.set(', '.join(str(x*100) for x in settings['roi']))
-        self.intro.set(settings['intro']);self.action_camera.set(settings['action_camera'])
+        self.show_final.set(settings['show_final']);self.intro.set(settings['intro']);self.action_camera.set(settings['action_camera'])
         self.replays.set(settings['replays']);self.replay_speed.set(str(settings['replay_speed']));self.use_ocr.set(settings['use_ocr'])
         self.project_ready(workflow.output_files(p))
 
@@ -522,8 +526,8 @@ class App(tk.Tk):
         self.editor.insert('1.0','\n'.join(f"{timestamp(c['start'])} - {timestamp(c['end'])} | {c['reason']}"+(f" | goal={timestamp(c['goal_at'])}" if c.get('goal_at') is not None else '') for c in p['clips']))
         for warning in p['warnings']:self.log(warning)
         try:
-            timeline=plan_timeline(p['clips'],int(self.target.get()),True,self.replays.get(),float(self.replay_speed.get()),intro_seconds=3 if self.intro.get() else 0)
-            self.status.set(f"Қайталау және есеппен бірге: {timeline['duration']:.1f} сек. goal= уақытын тексеріңіз.")
+            timeline=plan_timeline(p['clips'],int(self.target.get()),self.show_final.get(),self.replays.get(),float(self.replay_speed.get()),intro_seconds=3 if self.intro.get() else 0)
+            self.status.set(f"Жалпы ұзақтығы: {timeline['duration']:.1f} сек. goal= уақытын тексеріңіз.")
         except ValueError as e:self.status.set(str(e))
 
     def parse(self,text=None):
@@ -547,8 +551,9 @@ class App(tk.Tk):
         try:
             if not self.project_dir:raise ValueError('Алдымен «ШОРТС ЖАСАУ» басыңыз немесе сақталған жобаны ашыңыз.')
             score=self.score.get().strip().replace('-',':')
-            if not re.fullmatch(r'\d{1,2}:\d{1,2}',score):raise ValueError('Есепті 1:3 түрінде енгізіңіз.')
-            clips=self.parse();settings=self.settings();title=self.title_text.get().strip();project=self.project_dir
+            settings=self.settings()
+            if (score or settings['show_final']) and not re.fullmatch(r'\d{1,2}:\d{1,2}',score):raise ValueError('Есепті 1:3 түрінде енгізіңіз.')
+            clips=self.parse();title=self.title_text.get().strip();project=self.project_dir
             self.start(lambda:workflow.rerender(project,score,title,clips,settings,self.log,self.cancel_event),self.project_ready)
         except Exception as e:messagebox.showerror('Қате',str(e))
 
@@ -591,7 +596,7 @@ class App(tk.Tk):
             self.target.set(str(settings['target']));self.crop.set(str(settings['crop_top']*100))
             self.music_volume.set(round(settings['music_level']*100));self.source_volume.set(round(settings['source_level']*100))
             self.roi.set(', '.join(str(x*100) for x in settings['roi']))
-            self.intro.set(settings['intro'])
+            self.show_final.set(settings['show_final']);self.intro.set(settings['intro'])
             self.action_camera.set(settings['action_camera'])
             self.replays.set(settings['replays']);self.replay_speed.set(str(settings['replay_speed']));self.use_ocr.set(settings['use_ocr'])
             self.project_ready(workflow.output_files(p))

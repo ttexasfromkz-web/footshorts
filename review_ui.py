@@ -197,9 +197,9 @@ class ReviewWindow(tk.Toplevel):
             for p in c.get('focus_points',[]):self.focus_list.insert('end',clock(p['time'])+f"  x={p['x']:.2f}, y={p['y']:.2f}")
         try:
             settings={**workflow.DEFAULTS,**self.project.get('settings',{})}
-            p=plan_timeline(self.model.clips,settings['target'],True,settings['replays'],settings['replay_speed'],
+            p=plan_timeline(self.model.clips,settings['target'],settings['show_final'],settings['replays'],settings['replay_speed'],
                             intro_seconds=3 if settings['intro'] else 0)
-            text=f"Кіріспе, қайталау және есеппен бірге: {p['duration']:.1f} сек."
+            text=f"Жалпы ұзақтығы: {p['duration']:.1f} сек."
         except ValueError as e:text=str(e)
         self.total_label.configure(text=text)
         self.draw()
@@ -272,7 +272,7 @@ class ReviewWindow(tk.Toplevel):
         def run():
             clips=self.model.validate()
             settings={**workflow.DEFAULTS,**self.project.get('settings',{})}
-            plan_timeline(clips,settings['target'],True,settings['replays'],settings['replay_speed'],
+            plan_timeline(clips,settings['target'],settings['show_final'],settings['replays'],settings['replay_speed'],
                           intro_seconds=3 if settings['intro'] else 0)
             self.project.update(clips=clips,settings=settings,status='edited')
             workflow.save_project(self.project)
