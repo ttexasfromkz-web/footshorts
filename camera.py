@@ -44,7 +44,8 @@ class BallTracker:
             self.confidence=min(1.,.7*self.confidence+.3*(.5+min(.5,motion*2)))
         else:
             self.confidence*=.65
-            if self.last_seen is not None and time-self.last_seen>1.5:self.point=None;self.velocity[:]=0
+            if self.last_seen is not None and time-self.last_seen>1.5:
+                self.point=None;self.velocity[:]=0;self.moving=0;self.confidence=0.
         self.gray=gray;self.last_time=time
         return (float(self.point[0]) if self.point is not None else .5,
                 found and self.confidence>=.45 and self.moving>=2)

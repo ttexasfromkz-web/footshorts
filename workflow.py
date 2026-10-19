@@ -213,11 +213,11 @@ def resolve_checkpoint(base,item):
     directory=item.get('directory','');ident=item.get('project_id')
     if directory and (Path(directory)/'source/project.json').is_file():
         p=load_project(directory)
-        if not ident or p.get('project_id')==ident:return Path(directory)
+        if not ident or p.get('project_id')==ident:return Path(directory).resolve()
     if ident:
-        for candidate in (Path(base)/'output').glob('*/source/project.json'):
+        for candidate in (Path(base).resolve()/'output').glob('*/source/project.json'):
             try:
-                if json.loads(candidate.read_text(encoding='utf-8')).get('project_id')==ident:return candidate.parent.parent
+                if json.loads(candidate.read_text(encoding='utf-8')).get('project_id')==ident:return candidate.parent.parent.resolve()
             except (OSError,ValueError):continue
     return None
 

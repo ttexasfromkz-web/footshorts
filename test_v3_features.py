@@ -112,6 +112,14 @@ class TrackingTests(unittest.TestCase):
         x,found=tracker.update(frame,2)
         self.assertFalse(found);self.assertLess(x,.65)
 
+    def test_reacquired_static_object_requires_fresh_motion(self):
+        tracker=camera.BallTracker()
+        for i in range(8):tracker.update(self.frame(290+i*7),i*.25)
+        blank=np.full((360,640,3),(35,125,35),np.uint8)
+        for i in range(8,20):tracker.update(blank,i*.25)
+        for i in range(20,32):x,found=tracker.update(self.frame(340),i*.25)
+        self.assertFalse(found)
+
 
 class ResumeTests(unittest.TestCase):
     def analysis(self,*args):return dict(score='1:0',clips=[dict(start=0,end=2,reason='audio')],warnings=[])
