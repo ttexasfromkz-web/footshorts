@@ -8,6 +8,7 @@ import re
 import shutil
 import tempfile
 import uuid
+import copy
 import core
 import downloader
 import publishing
@@ -54,7 +55,25 @@ def load_project(path):
     if p.is_dir():p=p/'source'/'project.json'
     data=json.loads(p.read_text(encoding='utf-8'))
     if data.get('kind')!='football_project':raise ValueError('Бұл автоматты жоба файлы емес.')
-    data['directory']=str(p.parent.parent)
+    current=p.parent.parent
+    previous=Path(data.get('directory') or current).resolve()
+    roots=[(previous,current)]
+    if previous.parent.name.lower()=='output' and current.parent.name.lower()=='output':
+        roots.append((previous.parent.parent,current.parent.parent))
+    def relocated(value):
+        if value and Path(value).is_absolute():
+            for old,new in roots:
+                if Path(value).resolve().is_relative_to(old):return relocate_path(value,old,new)
+        return value
+    for key in ('local_video','music'):
+        if key in data.get('request',{}):data['request'][key]=relocated(data['request'][key])
+    settings=data.get('settings',{})
+    if 'youtube_cookie_file' in settings:settings['youtube_cookie_file']=relocated(settings['youtube_cookie_file'])
+    for key in ('brand_logo','font_file'):
+        style=settings.get('channel_style',{})
+        if key in style:style[key]=relocated(style[key])
+    if data.get('analysis',{}).get('video'):data['analysis']['video']=relocated(data['analysis']['video'])
+    data['directory']=str(current)
     # Stored media paths are relative so a whole project can be moved.
     media_path(data,data.get('source_file',''))
     return data
@@ -212,16 +231,95 @@ def create_project(base,url='',local_video='',music='',settings=None,title_hint=
 
 
 def resolve_checkpoint(base,item):
-    directory=item.get('directory','');ident=item.get('project_id')
-    if directory and (Path(directory)/'source/project.json').is_file():
-        p=load_project(directory)
-        if not ident or p.get('project_id')==ident:return Path(directory).resolve()
+    root=Path(base).resolve()/'output'
+    directory=Path(item['directory']).resolve() if item.get('directory') else None
+    ident=item.get('project_id')
+    # An app copy may retain an absolute path to a still-existing original.
+    # Recover the matching project in this app's output before using that path.
+    def matches(candidate):
+        try:
+            project=load_project(candidate)
+            return not ident or project.get('project_id')==ident
+        except (OSError,ValueError):return False
+    if directory:
+        if directory.parent.name.lower()!='output' and not directory.is_relative_to(root):
+            if (directory/'source/project.json').is_file() and matches(directory):return directory
+        local=directory if directory.is_relative_to(root) else root/directory.name
+        if (local/'source/project.json').is_file() and matches(local):return local.resolve()
     if ident:
-        for candidate in (Path(base).resolve()/'output').glob('*/source/project.json'):
+        for candidate in root.glob('*/source/project.json'):
             try:
                 if json.loads(candidate.read_text(encoding='utf-8')).get('project_id')==ident:return candidate.parent.parent.resolve()
             except (OSError,ValueError):continue
+    # Missing copied output must not silently fall back to another app's output.
+    if directory and directory.parent.name.lower()!='output':
+        if (directory/'source/project.json').is_file() and matches(directory):return directory
     return None
+
+
+def relocate_path(value,old,new):
+    if not value or old is None:return value
+    path=Path(value)
+    if not path.is_absolute():return value
+    path=path.resolve();old=Path(old).resolve()
+    return str(Path(new).resolve()/path.relative_to(old)) if path.is_relative_to(old) else value
+
+
+def relocate_ui_state(base,state):
+    """Rebase app-owned saved paths, preserving deliberately external media."""
+    state=copy.deepcopy(state);base=Path(base).resolve()
+    old=state.get('application_base')
+    project=Path(state['project']).resolve() if state.get('project') else None
+    # Upgrade older ui_state.json files that did not record the application root.
+    if not old and project and project.parent.name.lower()=='output':old=str(project.parent.parent)
+    if not old and state.get('music'):
+        music=Path(state['music']).resolve()
+        if music.parent.name.lower()=='music' and music.name in ('Stadium_Ignition.mp3','Stadium_Ignition.wav'):
+            old=str(music.parent.parent)
+    old=Path(old).resolve() if old else None
+    def rebase(value):
+        return relocate_path(value,old,base)
+    ident=state.get('project_id')
+    if project and not ident:
+        try:ident=load_project(project).get('project_id')
+        except (OSError,ValueError):pass
+    for key in ('project','video','music'):state[key]=rebase(state.get(key))
+    settings=state.setdefault('settings',{})
+    settings['youtube_cookie_file']=rebase(settings.get('youtube_cookie_file',''))
+    for key in ('brand_logo','font_file'):
+        style=settings.get('channel_style',{})
+        if key in style:style[key]=rebase(style[key])
+    if project:
+        found=resolve_checkpoint(base,dict(directory=state['project'],project_id=ident))
+        if found:
+            p=load_project(found);state['project']=str(found);state['project_id']=p.get('project_id')
+            # Project-relative media may also move when the copied folder is renamed.
+            mapped_project=Path(rebase(str(project)))
+            for key in ('video','music'):state[key]=relocate_path(state.get(key),mapped_project,found)
+            for key in ('brand_logo','font_file'):
+                style=settings.get('channel_style',{})
+                if key in style:style[key]=relocate_path(style[key],mapped_project,found)
+    state['application_base']=str(base)
+    return state
+
+
+def relocate_queue_items(base,data):
+    old=data.get('application_base')
+    if not old:
+        for item in data.get('items',[]):
+            directory=Path(item['directory']).resolve() if item.get('directory') else None
+            if directory and directory.parent.name.lower()=='output':
+                old=str(directory.parent.parent);break
+    result=[]
+    for item in data.get('items',[]):
+        saved=relocate_ui_state(base,dict(application_base=old,project=item.get('directory'),
+                                       project_id=item.get('project_id'),video=item.get('url') if item.get('source_type')=='file' else None))
+        item=copy.deepcopy(item)
+        if item.get('directory'):item['directory']=saved.get('project') or ''
+        if saved.get('project_id'):item['project_id']=saved['project_id']
+        if item.get('source_type')=='file':item['url']=saved['video']
+        result.append(item)
+    return result
 
 
 def resume_project(directory,log=print,cancel=None,on_source=None,on_checkpoint=None):

@@ -303,15 +303,18 @@ class App(tk.Tk):
         if reschedule:self.after(3600000,self.cleanup_projects)
 
     def save_state(self):
-        state=dict(project=self.project_dir,youtube=self.youtube.get(),video=self.video.get(),music=self.music.get(),
+        state=dict(application_base=str(BASE.resolve()),project=self.project_dir,youtube=self.youtube.get(),video=self.video.get(),music=self.music.get(),
                    title=self.title_text.get(),score=self.score.get(),editor=self.editor.get('1.0','end'),settings=self.settings())
+        if self.project_dir:
+            try:state['project_id']=workflow.load_project(self.project_dir).get('project_id')
+            except (OSError,ValueError):pass
         updater.atomic_json(BASE/'ui_state.json',state)
 
     def restore_state(self):
         try:
             path=BASE/'ui_state.json'
             if not path.is_file():return
-            state=json.loads(path.read_text(encoding='utf-8'));settings=state.get('settings',{})
+            state=workflow.relocate_ui_state(BASE,json.loads(path.read_text(encoding='utf-8')));settings=state.get('settings',{})
             project=state.get('project')
             if project and Path(project).is_dir():self.project_ready(workflow.output_files(workflow.load_project(project)))
             for key,var in [('youtube',self.youtube),('video',self.video),('music',self.music),('title',self.title_text),('score',self.score)]:
@@ -330,6 +333,7 @@ class App(tk.Tk):
             self.channel_style=settings.get('channel_style',{})
             self.action_camera.set(settings.get('action_camera',False) and self.is_shorts())
             self.use_ocr.set(settings.get('use_ocr',True));self.replays.set(settings.get('replays',True));self.replay_speed.set(str(settings.get('replay_speed',.5)))
+            updater.atomic_json(path,state)
         except Exception as e:self.log('Баптауларды қалпына келтіру: '+str(e))
 
     def check_updates(self,force=False):

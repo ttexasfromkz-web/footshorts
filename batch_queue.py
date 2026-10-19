@@ -17,13 +17,14 @@ class BatchQueue:
         self.clock=clock;self.active=None;self.started=None;self.initial_elapsed=0.;self.last_saved=0.;self.progress=None
         if self.path.is_file():
             data=json.loads(self.path.read_text(encoding='utf-8'))
-            self.items=data.get('items',[])
+            from workflow import relocate_queue_items
+            self.items=relocate_queue_items(self.path.resolve().parent,data)
             for item in self.items:
                 if item.get('status')=='running':item['status']='queued'
         self.save()
 
     def save(self):
-        with self.lock:updater.atomic_json(self.path,{'schema':1,'items':self.items})
+        with self.lock:updater.atomic_json(self.path,{'schema':1,'application_base':str(self.path.resolve().parent),'items':self.items})
 
     def snapshot(self):
         with self.lock:return copy.deepcopy(self.items)

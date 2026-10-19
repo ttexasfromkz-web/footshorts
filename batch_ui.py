@@ -124,5 +124,8 @@ class BatchWindow(tk.Toplevel):
         if not chosen:return
         item=next((i for i in self.model.snapshot() if i['id']==chosen[0]),None)
         if item and item.get('directory'):
-            try:self.owner.open_project_path(item['directory']);self.owner.review()
+            try:
+                directory=workflow.resolve_checkpoint(self.owner.app_base,item)
+                if directory is None:raise FileNotFoundError('Жоба осы қалтадан табылмады. Жобаны output қалтасына көшіріңіз.')
+                self.owner.open_project_path(directory);self.owner.review()
             except Exception as e:messagebox.showerror('Жоба',str(e),parent=self)
