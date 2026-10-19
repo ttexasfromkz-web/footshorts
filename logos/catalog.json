@@ -1,7 +1,7 @@
 {
   "schema": 1,
-  "pack": "national-001",
-  "status": "staged; application integration pending",
+  "pack": "national-001+kz-clubs-001",
+  "status": "40 source-verified emblems staged; application integration pending",
   "entries": [
     {
       "id": "national:kazakhstan",
@@ -20,13 +20,15 @@
         "Kazakhstan national team"
       ],
       "file": "national/kazakhstan.png",
-      "sha256": "d918d5b35648aa15c0c37d1d03b4bef664c309827ccc05b46d4edadcdf607c29",
-      "source": "https://kff.kz/images/logo-alone.png",
-      "source_page": "https://kff.kz/kk",
-      "review": "team identity visually checked; current-season variant not fully audited",
+      "sha256": "43673d7b177eeeb454b20e545a2cfc14096fa38c52fac1f552be2afc57beaae7",
+      "source": "https://api.fifa.com/api/v3/picture/associations-sq-2/KAZ",
+      "source_page": "https://inside.fifa.com/associations/KAZ",
+      "review": "Identity and file visually checked against FIFA association image. Federation emblem, not necessarily the shirt crest. No claim about match-specific kit variants.",
       "rights": "Third-party federation/team mark; no open license asserted",
       "added": "2026-10-19",
-      "approved_for_auto_use": false
+      "approved_for_auto_use": true,
+      "asset_type": "federation_emblem",
+      "verified_on": "2026-10-19"
     },
     {
       "id": "national:argentina",
@@ -42,13 +44,15 @@
         "ARG"
       ],
       "file": "national/argentina.png",
-      "sha256": "710b347160d75ff8ef3a4890072109c19ded303dd09995d433c95ba2bfa15092",
-      "source": "https://github.com/Sachawd/wc26-assets/blob/678d8838fb1e3e89e830ad02da55cd44d1fa5eb9/national-team-logos/argentina-national-team.png",
-      "source_page": "https://github.com/Sachawd/wc26-assets",
-      "review": "team identity visually checked; current-season variant not fully audited",
+      "sha256": "f870ff4c592c16020a97dd8fe6eef73cf7c252ea09f2adc82e1a60e4399574bd",
+      "source": "https://api.fifa.com/api/v3/picture/associations-sq-2/ARG",
+      "source_page": "https://inside.fifa.com/associations/ARG",
+      "review": "Identity and file visually checked against FIFA association image. Federation emblem, not necessarily the shirt crest. No claim about match-specific kit variants.",
       "rights": "Third-party federation/team mark; no open license asserted",
       "added": "2026-10-19",
-      "approved_for_auto_use": false
+      "approved_for_auto_use": true,
+      "asset_type": "federation_emblem",
+      "verified_on": "2026-10-19"
     },
     {
       "id": "national:brazil",
@@ -64,13 +68,15 @@
         "BRA"
       ],
       "file": "national/brazil.png",
-      "sha256": "7f3c2328b4176318550942df3b715c6c6985ed95c22f2b6748b79b84c914d91e",
-      "source": "https://github.com/Sachawd/wc26-assets/blob/678d8838fb1e3e89e830ad02da55cd44d1fa5eb9/national-team-logos/brazil-national-team.png",
-      "source_page": "https://github.com/Sachawd/wc26-assets",
-      "review": "team identity visually checked; current-season variant not fully audited",
+      "sha256": "e6e9903f80a4708405cd9f2622fe3f62b575b558c37e17eb7c37d33c67630883",
+      "source": "https://api.fifa.com/api/v3/picture/associations-sq-2/BRA",
+      "source_page": "https://inside.fifa.com/associations/BRA",
+      "review": "Identity and file visually checked against FIFA association image. Federation emblem, not necessarily the shirt crest. No claim about match-specific kit variants.",
       "rights": "Third-party federation/team mark; no open license asserted",
       "added": "2026-10-19",
-      "approved_for_auto_use": false
+      "approved_for_auto_use": true,
+      "asset_type": "federation_emblem",
+      "verified_on": "2026-10-19"
     },
     {
       "id": "national:france",
@@ -86,13 +92,15 @@
         "FRA"
       ],
       "file": "national/france.png",
-      "sha256": "0d76711ed901805708a71dcc5fbbd6ad4719cf8473fefabd2f7e6caff02934af",
-      "source": "https://github.com/Sachawd/wc26-assets/blob/678d8838fb1e3e89e830ad02da55cd44d1fa5eb9/national-team-logos/france-national-team.png",
-      "source_page": "https://github.com/Sachawd/wc26-assets",
-      "review": "team identity visually checked; current-season variant not fully audited",
+      "sha256": "c833c64a1889997cc8804290975aa6c07e4d53cc9ed839b598c50470f9c3aab7",
+      "source": "https://api.fifa.com/api/v3/picture/associations-sq-2/FRA",
+      "source_page": "https://inside.fifa.com/associations/FRA",
+      "review": "Identity and file visually checked against FIFA association image. Federation emblem, not necessarily the shirt crest. No claim about match-specific kit variants.",
       "rights": "Third-party federation/team mark; no open license asserted",
       "added": "2026-10-19",
-      "approved_for_auto_use": false
+      "approved_for_auto_use": true,
+      "asset_type": "federation_emblem",
+      "verified_on": "2026-10-19"
     },
     {
       "id": "national:england",
@@ -108,13 +116,15 @@
         "ENG"
       ],
       "file": "national/england.png",
-      "sha256": "6970d9cb14cc899ccbca5e947e018d0c05c890c9d40480ba2c5ddb0795c8dcd7",
-      "source": "https://github.com/Sachawd/wc26-assets/blob/678d8838fb1e3e89e830ad02da55cd44d1fa5eb9/national-team-logos/england-national-team.png",
-      "source_page": "https://github.com/Sachawd/wc26-assets",
-      "review": "team identity visually checked; current-season variant not fully audited",
+      "sha256": "edc2aa26776886fae33cf81ca521a9b614e0a837c3ac3c2143d765b41d657bbf",
+      "source": "https://api.fifa.com/api/v3/picture/associations-sq-2/ENG",
+      "source_page": "https://inside.fifa.com/associations/ENG",
+      "review": "Identity and file visually checked against FIFA association image. Federation emblem, not necessarily the shirt crest. No claim about match-specific kit variants.",
       "rights": "Third-party federation/team mark; no open license asserted",
       "added": "2026-10-19",
-      "approved_for_auto_use": false
+      "approved_for_auto_use": true,
+      "asset_type": "federation_emblem",
+      "verified_on": "2026-10-19"
     },
     {
       "id": "national:spain",
@@ -130,13 +140,15 @@
         "ESP"
       ],
       "file": "national/spain.png",
-      "sha256": "3056f9650d51373436b853ea5f6c609e447693d9a7b29137624b69d7e02b019d",
-      "source": "https://github.com/Sachawd/wc26-assets/blob/678d8838fb1e3e89e830ad02da55cd44d1fa5eb9/national-team-logos/spain-national-team.png",
-      "source_page": "https://github.com/Sachawd/wc26-assets",
-      "review": "One-star variant; current version needs rechecking before automatic use",
+      "sha256": "b85b3f63e920ee41d413b1692a2519eceb9dc80a7e59141debbf3b2992d017af",
+      "source": "https://api.fifa.com/api/v3/picture/associations-sq-2/ESP",
+      "source_page": "https://inside.fifa.com/associations/ESP",
+      "review": "Identity and file visually checked against FIFA association image. Federation emblem, not necessarily the shirt crest. No claim about match-specific kit variants.",
       "rights": "Third-party federation/team mark; no open license asserted",
       "added": "2026-10-19",
-      "approved_for_auto_use": false
+      "approved_for_auto_use": true,
+      "asset_type": "federation_emblem",
+      "verified_on": "2026-10-19"
     },
     {
       "id": "national:germany",
@@ -152,13 +164,15 @@
         "GER"
       ],
       "file": "national/germany.png",
-      "sha256": "4293faf6d728e11719c970b7b3c6993a4ff15b7aeb1eed6630b2a7488c9f94cf",
-      "source": "https://github.com/Sachawd/wc26-assets/blob/678d8838fb1e3e89e830ad02da55cd44d1fa5eb9/national-team-logos/germany-national-team.png",
-      "source_page": "https://github.com/Sachawd/wc26-assets",
-      "review": "team identity visually checked; current-season variant not fully audited",
+      "sha256": "1c3564e544fc9a91a0193b816dc73779764960ca9bc60132ec4f1279e6c73a39",
+      "source": "https://api.fifa.com/api/v3/picture/associations-sq-2/GER",
+      "source_page": "https://inside.fifa.com/associations/GER",
+      "review": "Identity and file visually checked against FIFA association image. Federation emblem, not necessarily the shirt crest. No claim about match-specific kit variants.",
       "rights": "Third-party federation/team mark; no open license asserted",
       "added": "2026-10-19",
-      "approved_for_auto_use": false
+      "approved_for_auto_use": true,
+      "asset_type": "federation_emblem",
+      "verified_on": "2026-10-19"
     },
     {
       "id": "national:portugal",
@@ -174,13 +188,15 @@
         "POR"
       ],
       "file": "national/portugal.png",
-      "sha256": "2eddf93b05b87fae94fb1cd74f49c3b3540dc77f535a7a7cf950884b5f9d7b2f",
-      "source": "https://github.com/Sachawd/wc26-assets/blob/678d8838fb1e3e89e830ad02da55cd44d1fa5eb9/national-team-logos/portugal-national-team.png",
-      "source_page": "https://github.com/Sachawd/wc26-assets",
-      "review": "team identity visually checked; current-season variant not fully audited",
+      "sha256": "227dc10813b3cc6eaa47ea0afd94ebec8ffe8ac2b0b3be69343e07972f4d2a1e",
+      "source": "https://api.fifa.com/api/v3/picture/associations-sq-2/POR",
+      "source_page": "https://inside.fifa.com/associations/POR",
+      "review": "Identity and file visually checked against FIFA association image. Federation emblem, not necessarily the shirt crest. No claim about match-specific kit variants.",
       "rights": "Third-party federation/team mark; no open license asserted",
       "added": "2026-10-19",
-      "approved_for_auto_use": false
+      "approved_for_auto_use": true,
+      "asset_type": "federation_emblem",
+      "verified_on": "2026-10-19"
     },
     {
       "id": "national:italy",
@@ -196,13 +212,15 @@
         "ITA"
       ],
       "file": "national/italy.png",
-      "sha256": "1ac71858ff6d708055f2adb58120ce3bfd3c70b8c76fa50c05b1ef2d3cd12f1b",
-      "source": "https://github.com/Sachawd/wc26-assets/blob/678d8838fb1e3e89e830ad02da55cd44d1fa5eb9/national-team-logos/italy-national-team.png",
-      "source_page": "https://github.com/Sachawd/wc26-assets",
-      "review": "team identity visually checked; current-season variant not fully audited",
+      "sha256": "f6746f04c3df28c1403d48b1565045da28fca121c7d0a1cd2e4f30ac6d3ce1b6",
+      "source": "https://api.fifa.com/api/v3/picture/associations-sq-2/ITA",
+      "source_page": "https://inside.fifa.com/associations/ITA",
+      "review": "Identity and file visually checked against FIFA association image. Federation emblem, not necessarily the shirt crest. No claim about match-specific kit variants.",
       "rights": "Third-party federation/team mark; no open license asserted",
       "added": "2026-10-19",
-      "approved_for_auto_use": false
+      "approved_for_auto_use": true,
+      "asset_type": "federation_emblem",
+      "verified_on": "2026-10-19"
     },
     {
       "id": "national:netherlands",
@@ -221,13 +239,15 @@
         "Holland"
       ],
       "file": "national/netherlands.png",
-      "sha256": "5f33309398ed6d6177f6a132e58a236496d2a6dfc4fa7e3c54c8932b25903efc",
-      "source": "https://github.com/Sachawd/wc26-assets/blob/678d8838fb1e3e89e830ad02da55cd44d1fa5eb9/national-team-logos/netherlands-national-team.png",
-      "source_page": "https://github.com/Sachawd/wc26-assets",
-      "review": "team identity visually checked; current-season variant not fully audited",
+      "sha256": "7638b275a7fad5dadfade4d2aad236237c62c4a73401cb55fd239250ad8cb12e",
+      "source": "https://api.fifa.com/api/v3/picture/associations-sq-2/NED",
+      "source_page": "https://inside.fifa.com/associations/NED",
+      "review": "Identity and file visually checked against FIFA association image. Federation emblem, not necessarily the shirt crest. No claim about match-specific kit variants.",
       "rights": "Third-party federation/team mark; no open license asserted",
       "added": "2026-10-19",
-      "approved_for_auto_use": false
+      "approved_for_auto_use": true,
+      "asset_type": "federation_emblem",
+      "verified_on": "2026-10-19"
     },
     {
       "id": "national:belgium",
@@ -243,13 +263,15 @@
         "BEL"
       ],
       "file": "national/belgium.png",
-      "sha256": "c2b0ca236bd4660cd0a1ebbff7f9b39d09d7bcb6ae5f08513a94a34090ef327f",
-      "source": "https://github.com/Sachawd/wc26-assets/blob/678d8838fb1e3e89e830ad02da55cd44d1fa5eb9/national-team-logos/belgium-national-team.png",
-      "source_page": "https://github.com/Sachawd/wc26-assets",
-      "review": "team identity visually checked; current-season variant not fully audited",
+      "sha256": "f48db468075e7097c677d4074ae16bd67acc8547134a23971b39703e3249370c",
+      "source": "https://api.fifa.com/api/v3/picture/associations-sq-2/BEL",
+      "source_page": "https://inside.fifa.com/associations/BEL",
+      "review": "Identity and file visually checked against FIFA association image. Federation emblem, not necessarily the shirt crest. No claim about match-specific kit variants.",
       "rights": "Third-party federation/team mark; no open license asserted",
       "added": "2026-10-19",
-      "approved_for_auto_use": false
+      "approved_for_auto_use": true,
+      "asset_type": "federation_emblem",
+      "verified_on": "2026-10-19"
     },
     {
       "id": "national:croatia",
@@ -265,13 +287,15 @@
         "CRO"
       ],
       "file": "national/croatia.png",
-      "sha256": "1648e614544205a443f480e9eb08a2a15b20a0e53a0e29b19dcb3f41e5551497",
-      "source": "https://github.com/Sachawd/wc26-assets/blob/678d8838fb1e3e89e830ad02da55cd44d1fa5eb9/national-team-logos/croatia-national-team.png",
-      "source_page": "https://github.com/Sachawd/wc26-assets",
-      "review": "team identity visually checked; current-season variant not fully audited",
+      "sha256": "0373637c5b68e72cec87104588f006693b47ba886b560bb8bd2f91833a12521d",
+      "source": "https://api.fifa.com/api/v3/picture/associations-sq-2/CRO",
+      "source_page": "https://inside.fifa.com/associations/CRO",
+      "review": "Identity and file visually checked against FIFA association image. Federation emblem, not necessarily the shirt crest. No claim about match-specific kit variants.",
       "rights": "Third-party federation/team mark; no open license asserted",
       "added": "2026-10-19",
-      "approved_for_auto_use": false
+      "approved_for_auto_use": true,
+      "asset_type": "federation_emblem",
+      "verified_on": "2026-10-19"
     },
     {
       "id": "national:uruguay",
@@ -287,13 +311,15 @@
         "URU"
       ],
       "file": "national/uruguay.png",
-      "sha256": "b69f9aaee05b5e6cee934aac0438e549076ce4ea8ca5310538850071c926ac99",
-      "source": "https://github.com/Sachawd/wc26-assets/blob/678d8838fb1e3e89e830ad02da55cd44d1fa5eb9/national-team-logos/uruguay-national-team.png",
-      "source_page": "https://github.com/Sachawd/wc26-assets",
-      "review": "team identity visually checked; current-season variant not fully audited",
+      "sha256": "bd20bd75877129f3b4a2788a7398b794385faff9183dfaff75ec8c0b411fa433",
+      "source": "https://api.fifa.com/api/v3/picture/associations-sq-2/URU",
+      "source_page": "https://inside.fifa.com/associations/URU",
+      "review": "Identity and file visually checked against FIFA association image. Federation emblem, not necessarily the shirt crest. No claim about match-specific kit variants.",
       "rights": "Third-party federation/team mark; no open license asserted",
       "added": "2026-10-19",
-      "approved_for_auto_use": false
+      "approved_for_auto_use": true,
+      "asset_type": "federation_emblem",
+      "verified_on": "2026-10-19"
     },
     {
       "id": "national:colombia",
@@ -309,13 +335,15 @@
         "COL"
       ],
       "file": "national/colombia.png",
-      "sha256": "c95d429fc1a806e4e168e3158cc0525ca2de2f3bd0e7ccbf972bda1234677d42",
-      "source": "https://github.com/Sachawd/wc26-assets/blob/678d8838fb1e3e89e830ad02da55cd44d1fa5eb9/national-team-logos/colombia-national-team.png",
-      "source_page": "https://github.com/Sachawd/wc26-assets",
-      "review": "team identity visually checked; current-season variant not fully audited",
+      "sha256": "5793612f30ddb475b466f15c62e8a0e87ddd701043e0ecc350dc82f6fded19f2",
+      "source": "https://api.fifa.com/api/v3/picture/associations-sq-2/COL",
+      "source_page": "https://inside.fifa.com/associations/COL",
+      "review": "Identity and file visually checked against FIFA association image. Federation emblem, not necessarily the shirt crest. No claim about match-specific kit variants.",
       "rights": "Third-party federation/team mark; no open license asserted",
       "added": "2026-10-19",
-      "approved_for_auto_use": false
+      "approved_for_auto_use": true,
+      "asset_type": "federation_emblem",
+      "verified_on": "2026-10-19"
     },
     {
       "id": "national:mexico",
@@ -331,13 +359,15 @@
         "MEX"
       ],
       "file": "national/mexico.png",
-      "sha256": "be8eb7a9b7d270f2cf6316316af32961cf3d6e96436b6eb37ef36f5adbcb975f",
-      "source": "https://github.com/Sachawd/wc26-assets/blob/678d8838fb1e3e89e830ad02da55cd44d1fa5eb9/national-team-logos/mexico-national-team.png",
-      "source_page": "https://github.com/Sachawd/wc26-assets",
-      "review": "team identity visually checked; current-season variant not fully audited",
+      "sha256": "b52ba373c1b1f2b81cb9496a2be1ba8721726cb81e841d9333b369b9bad76219",
+      "source": "https://api.fifa.com/api/v3/picture/associations-sq-2/MEX",
+      "source_page": "https://inside.fifa.com/associations/MEX",
+      "review": "Identity and file visually checked against FIFA association image. Federation emblem, not necessarily the shirt crest. No claim about match-specific kit variants.",
       "rights": "Third-party federation/team mark; no open license asserted",
       "added": "2026-10-19",
-      "approved_for_auto_use": false
+      "approved_for_auto_use": true,
+      "asset_type": "federation_emblem",
+      "verified_on": "2026-10-19"
     },
     {
       "id": "national:usa",
@@ -356,13 +386,15 @@
         "United States of America"
       ],
       "file": "national/usa.png",
-      "sha256": "11eb862a7b22389e2da687523e2c17346ca4e9c8a89cd8cc2306019d4a34072c",
-      "source": "https://github.com/Sachawd/wc26-assets/blob/678d8838fb1e3e89e830ad02da55cd44d1fa5eb9/national-team-logos/usmnt-national-team.png",
-      "source_page": "https://github.com/Sachawd/wc26-assets",
-      "review": "team identity visually checked; current-season variant not fully audited",
+      "sha256": "be9de6b9b1ef8a0d3218da2a8ec32714fe58013524e1c7e5af7de975c27ccd56",
+      "source": "https://api.fifa.com/api/v3/picture/associations-sq-2/USA",
+      "source_page": "https://inside.fifa.com/associations/USA",
+      "review": "Identity and file visually checked against FIFA association image. Federation emblem, not necessarily the shirt crest. No claim about match-specific kit variants.",
       "rights": "Third-party federation/team mark; no open license asserted",
       "added": "2026-10-19",
-      "approved_for_auto_use": false
+      "approved_for_auto_use": true,
+      "asset_type": "federation_emblem",
+      "verified_on": "2026-10-19"
     },
     {
       "id": "national:japan",
@@ -379,13 +411,15 @@
         "JPN"
       ],
       "file": "national/japan.png",
-      "sha256": "a112a8bb8d2d40420b271fe0e3b224d7781aab6a867c0b6c3516cad8bd117ac5",
-      "source": "https://github.com/Sachawd/wc26-assets/blob/678d8838fb1e3e89e830ad02da55cd44d1fa5eb9/national-team-logos/japan-national-team.png",
-      "source_page": "https://github.com/Sachawd/wc26-assets",
-      "review": "team identity visually checked; current-season variant not fully audited",
+      "sha256": "479fe5990601ae131413a79a6f96676b2c4ccf57d54d91ec58f091723d9cf3ba",
+      "source": "https://api.fifa.com/api/v3/picture/associations-sq-2/JPN",
+      "source_page": "https://inside.fifa.com/associations/JPN",
+      "review": "Identity and file visually checked against FIFA association image. Federation emblem, not necessarily the shirt crest. No claim about match-specific kit variants.",
       "rights": "Third-party federation/team mark; no open license asserted",
       "added": "2026-10-19",
-      "approved_for_auto_use": false
+      "approved_for_auto_use": true,
+      "asset_type": "federation_emblem",
+      "verified_on": "2026-10-19"
     },
     {
       "id": "national:south-korea",
@@ -405,13 +439,15 @@
         "Корея Республикасы"
       ],
       "file": "national/south-korea.png",
-      "sha256": "f87b6ebe47860fb900202e3918ce693da2d8896dabb6695c035d5ddc7ddf22b9",
-      "source": "https://github.com/Sachawd/wc26-assets/blob/678d8838fb1e3e89e830ad02da55cd44d1fa5eb9/national-team-logos/south-korea-national-team.png",
-      "source_page": "https://github.com/Sachawd/wc26-assets",
-      "review": "team identity visually checked; current-season variant not fully audited",
+      "sha256": "eb094a4e6abaf4c4a25846029e49afe4e33098c2f3c729a5b00e7cd312bfddde",
+      "source": "https://api.fifa.com/api/v3/picture/associations-sq-2/KOR",
+      "source_page": "https://inside.fifa.com/associations/KOR",
+      "review": "Identity and file visually checked against FIFA association image. Federation emblem, not necessarily the shirt crest. No claim about match-specific kit variants.",
       "rights": "Third-party federation/team mark; no open license asserted",
       "added": "2026-10-19",
-      "approved_for_auto_use": false
+      "approved_for_auto_use": true,
+      "asset_type": "federation_emblem",
+      "verified_on": "2026-10-19"
     },
     {
       "id": "national:morocco",
@@ -427,13 +463,15 @@
         "MAR"
       ],
       "file": "national/morocco.png",
-      "sha256": "d769a2d1bee8dc48c8f08fdb8fcc4b3e3e3af2a24fb145d4bbd3dd9e4ecadec9",
-      "source": "https://github.com/Sachawd/wc26-assets/blob/678d8838fb1e3e89e830ad02da55cd44d1fa5eb9/national-team-logos/morocco-national-team.png",
-      "source_page": "https://github.com/Sachawd/wc26-assets",
-      "review": "team identity visually checked; current-season variant not fully audited",
+      "sha256": "2adae8b96100958864e468b053fc5eefeebd6a53813768939c445395d4986cd2",
+      "source": "https://api.fifa.com/api/v3/picture/associations-sq-2/MAR",
+      "source_page": "https://inside.fifa.com/associations/MAR",
+      "review": "Identity and file visually checked against FIFA association image. Federation emblem, not necessarily the shirt crest. No claim about match-specific kit variants.",
       "rights": "Third-party federation/team mark; no open license asserted",
       "added": "2026-10-19",
-      "approved_for_auto_use": false
+      "approved_for_auto_use": true,
+      "asset_type": "federation_emblem",
+      "verified_on": "2026-10-19"
     },
     {
       "id": "national:uzbekistan",
@@ -450,13 +488,547 @@
         "UZB"
       ],
       "file": "national/uzbekistan.png",
-      "sha256": "21dbd40bfa08aeaa2c80519d3cf3765d88225a4c4b91dbc207694149536dac31",
-      "source": "https://github.com/Sachawd/wc26-assets/blob/678d8838fb1e3e89e830ad02da55cd44d1fa5eb9/national-team-logos/uzbekistan-national-team.png",
-      "source_page": "https://github.com/Sachawd/wc26-assets",
-      "review": "team identity visually checked; current-season variant not fully audited",
+      "sha256": "6a0a9318097fb85f47f76000978a6bf49974a296170be8016f4177be704010dc",
+      "source": "https://api.fifa.com/api/v3/picture/associations-sq-2/UZB",
+      "source_page": "https://inside.fifa.com/associations/UZB",
+      "review": "Identity and file visually checked against FIFA association image. Federation emblem, not necessarily the shirt crest. No claim about match-specific kit variants.",
       "rights": "Third-party federation/team mark; no open license asserted",
       "added": "2026-10-19",
-      "approved_for_auto_use": false
+      "approved_for_auto_use": true,
+      "asset_type": "federation_emblem",
+      "verified_on": "2026-10-19"
+    },
+    {
+      "id": "club:kazakhstan:astana",
+      "kind": "club",
+      "country": "kazakhstan",
+      "names": {
+        "kk": "Астана",
+        "ru": "Астана",
+        "en": "Astana"
+      },
+      "aliases": [
+        "Астана",
+        "Astana"
+      ],
+      "file": "clubs/kazakhstan/astana.png",
+      "sha256": "afb08d2c9d9a5792519fcd2e4d2826399038e9b9b9673dc2c4aaaeee7052e85f",
+      "source": "https://qfl.kz/upload/teams/d09/75zm89vuc844qsx4zk4m3og1wqwmwaq2.svg",
+      "source_page": "https://qfl.kz/team/12/",
+      "asset_type": "club_crest",
+      "review": "Downloaded from QFL club directory and visually checked. Directory membership is not a claim of current league division.",
+      "match_note": "Exact aliases only; do not strip reserve/youth suffixes.",
+      "rights": "Third-party club mark; no open license asserted",
+      "added": "2026-10-19",
+      "verified_on": "2026-10-19",
+      "approved_for_auto_use": true
+    },
+    {
+      "id": "club:kazakhstan:atyrau",
+      "kind": "club",
+      "country": "kazakhstan",
+      "names": {
+        "kk": "Атырау",
+        "ru": "Атырау",
+        "en": "Atyrau"
+      },
+      "aliases": [
+        "Атырау",
+        "Atyrau"
+      ],
+      "file": "clubs/kazakhstan/atyrau.png",
+      "sha256": "d43bbfeda2a917064eb3e3871dfaff98e5ed5312a4bcbcdfa4bd335153bf6c83",
+      "source": "https://qfl.kz/upload/teams/c62/d42t2r2msqqkfn66vujt1vsfgsyhfmhr.svg",
+      "source_page": "https://qfl.kz/team/1/",
+      "asset_type": "club_crest",
+      "review": "Downloaded from QFL club directory and visually checked. Directory membership is not a claim of current league division.",
+      "match_note": "Exact aliases only; do not strip reserve/youth suffixes.",
+      "rights": "Third-party club mark; no open license asserted",
+      "added": "2026-10-19",
+      "verified_on": "2026-10-19",
+      "approved_for_auto_use": true
+    },
+    {
+      "id": "club:kazakhstan:aktobe",
+      "kind": "club",
+      "country": "kazakhstan",
+      "names": {
+        "kk": "Ақтөбе",
+        "ru": "Актобе",
+        "en": "Aktobe"
+      },
+      "aliases": [
+        "Ақтөбе",
+        "Актобе",
+        "Aktobe"
+      ],
+      "file": "clubs/kazakhstan/aktobe.png",
+      "sha256": "090f42551c413ff0bf0ca54330626b7618a883a803e7c1c336b967b962da9957",
+      "source": "https://qfl.kz/upload/teams/85d/zkutfdh3z7tet6krc4nnf3z7842cg9cq.png",
+      "source_page": "https://qfl.kz/team/22/",
+      "asset_type": "club_crest",
+      "review": "Downloaded from QFL club directory and visually checked. Directory membership is not a claim of current league division.",
+      "match_note": "Exact aliases only; do not strip reserve/youth suffixes.",
+      "rights": "Third-party club mark; no open license asserted",
+      "added": "2026-10-19",
+      "verified_on": "2026-10-19",
+      "approved_for_auto_use": true
+    },
+    {
+      "id": "club:kazakhstan:elimai",
+      "kind": "club",
+      "country": "kazakhstan",
+      "names": {
+        "kk": "Елімай",
+        "ru": "Елимай",
+        "en": "Elimai"
+      },
+      "aliases": [
+        "Елімай",
+        "Елимай",
+        "Elimai",
+        "Yelimay",
+        "Елім-ай"
+      ],
+      "file": "clubs/kazakhstan/elimai.png",
+      "sha256": "dd085f2e9cab143fb3716a42af2e2ac801f32ccab9f684b377bad37fdab9aeb0",
+      "source": "https://qfl.kz/upload/teams/206/1oajf4ml3bvy2dg4y6t3lei96lafl1nb.svg",
+      "source_page": "https://qfl.kz/team/219/",
+      "asset_type": "club_crest",
+      "review": "Downloaded from QFL club directory and visually checked. Directory membership is not a claim of current league division.",
+      "match_note": "Exact aliases only; do not strip reserve/youth suffixes.",
+      "rights": "Third-party club mark; no open license asserted",
+      "added": "2026-10-19",
+      "verified_on": "2026-10-19",
+      "approved_for_auto_use": true
+    },
+    {
+      "id": "club:kazakhstan:zhetysu",
+      "kind": "club",
+      "country": "kazakhstan",
+      "names": {
+        "kk": "Жетісу",
+        "ru": "Жетысу",
+        "en": "Zhetysu"
+      },
+      "aliases": [
+        "Жетісу",
+        "Жетысу",
+        "Zhetysu",
+        "Zhetisu"
+      ],
+      "file": "clubs/kazakhstan/zhetysu.png",
+      "sha256": "ad82ae01506ce8afa7a98440f65410c2509a05f157fb16da5eaef7ac1fde9716",
+      "source": "https://qfl.kz/upload/teams/34c/d164bbdnnjrqjjx60y4uyhiw1du5lszu.png",
+      "source_page": "https://qfl.kz/team/23/",
+      "asset_type": "club_crest",
+      "review": "Downloaded from QFL club directory and visually checked. Directory membership is not a claim of current league division.",
+      "match_note": "Exact aliases only; do not strip reserve/youth suffixes.",
+      "rights": "Third-party club mark; no open license asserted",
+      "added": "2026-10-19",
+      "verified_on": "2026-10-19",
+      "approved_for_auto_use": true
+    },
+    {
+      "id": "club:kazakhstan:zhenis",
+      "kind": "club",
+      "country": "kazakhstan",
+      "names": {
+        "kk": "Жеңіс",
+        "ru": "Женис",
+        "en": "Zhenis"
+      },
+      "aliases": [
+        "Жеңіс",
+        "Женис",
+        "Zhenis",
+        "Zhenis Astana"
+      ],
+      "file": "clubs/kazakhstan/zhenis.png",
+      "sha256": "8cfd5943b6caa5048ca2f3b7df3acd48206b3d475e8313b5cef7bfb1ca1d97aa",
+      "source": "https://qfl.kz/upload/teams/30a/vxs0maac5mp1739l46yx404uyuz0t1lu.png",
+      "source_page": "https://qfl.kz/team/208/",
+      "asset_type": "club_crest",
+      "review": "Downloaded from QFL club directory and visually checked. Directory membership is not a claim of current league division.",
+      "match_note": "Exact aliases only; do not strip reserve/youth suffixes.",
+      "rights": "Third-party club mark; no open license asserted",
+      "added": "2026-10-19",
+      "verified_on": "2026-10-19",
+      "approved_for_auto_use": true
+    },
+    {
+      "id": "club:kazakhstan:ordabasy",
+      "kind": "club",
+      "country": "kazakhstan",
+      "names": {
+        "kk": "Ордабасы",
+        "ru": "Ордабасы",
+        "en": "Ordabasy"
+      },
+      "aliases": [
+        "Ордабасы",
+        "Ordabasy"
+      ],
+      "file": "clubs/kazakhstan/ordabasy.png",
+      "sha256": "b33ba65011c0be60f49054724d71e26f4c7dea3e6a4756c8204dabcc3e50974b",
+      "source": "https://qfl.kz/upload/teams/952/e4gbhces53iixexyecuzagjp0hxklce9.svg",
+      "source_page": "https://qfl.kz/team/25/",
+      "asset_type": "club_crest",
+      "review": "Downloaded from QFL club directory and visually checked. Directory membership is not a claim of current league division.",
+      "match_note": "Exact aliases only; do not strip reserve/youth suffixes.",
+      "rights": "Third-party club mark; no open license asserted",
+      "added": "2026-10-19",
+      "verified_on": "2026-10-19",
+      "approved_for_auto_use": true
+    },
+    {
+      "id": "club:kazakhstan:tobol",
+      "kind": "club",
+      "country": "kazakhstan",
+      "names": {
+        "kk": "Тобыл",
+        "ru": "Тобол",
+        "en": "Tobol"
+      },
+      "aliases": [
+        "Тобыл",
+        "Тобол",
+        "Tobol"
+      ],
+      "file": "clubs/kazakhstan/tobol.png",
+      "sha256": "9bb467995bd026efa0aa20e7f5d052599b20b9ac5eab59ceb5ccddbe5327b9f0",
+      "source": "https://qfl.kz/upload/teams/b17/egek5c7ggo3pxm7gl20z74kh45vlumxc.svg",
+      "source_page": "https://qfl.kz/team/13/",
+      "asset_type": "club_crest",
+      "review": "Downloaded from QFL club directory and visually checked. Directory membership is not a claim of current league division.",
+      "match_note": "Exact aliases only; do not strip reserve/youth suffixes.",
+      "rights": "Third-party club mark; no open license asserted",
+      "added": "2026-10-19",
+      "verified_on": "2026-10-19",
+      "approved_for_auto_use": true
+    },
+    {
+      "id": "club:kazakhstan:turan",
+      "kind": "club",
+      "country": "kazakhstan",
+      "names": {
+        "kk": "Тұран",
+        "ru": "Туран",
+        "en": "Turan"
+      },
+      "aliases": [
+        "Тұран",
+        "Туран",
+        "Turan"
+      ],
+      "file": "clubs/kazakhstan/turan.png",
+      "sha256": "3f2158006f9a7995b97c95e901746f9f4625012fd81bec691fabf020f6312d38",
+      "source": "https://qfl.kz/upload/teams/232/2r098bo38i70rewgbrsl9gtq4pfd84l0.png",
+      "source_page": "https://qfl.kz/team/197/",
+      "asset_type": "club_crest",
+      "review": "Downloaded from QFL club directory and visually checked. Directory membership is not a claim of current league division.",
+      "match_note": "Require country/club context for ambiguous short names; never fuzzy-match to another country.",
+      "rights": "Third-party club mark; no open license asserted",
+      "added": "2026-10-19",
+      "verified_on": "2026-10-19",
+      "approved_for_auto_use": true
+    },
+    {
+      "id": "club:kazakhstan:shakhter-karagandy",
+      "kind": "club",
+      "country": "kazakhstan",
+      "names": {
+        "kk": "Шахтер Қарағанды",
+        "ru": "Шахтёр Караганда",
+        "en": "Shakhter Karagandy"
+      },
+      "aliases": [
+        "Шахтер Қарағанды",
+        "Шахтёр Караганда",
+        "Shakhter Karagandy",
+        "Шахтер Караганда",
+        "Шахтер Карағанды",
+        "Shakhter Karaganda"
+      ],
+      "file": "clubs/kazakhstan/shakhter-karagandy.png",
+      "sha256": "841a0d94d2879f378a04852a117ef56d6ac7f0524367c1d69870759d011c24de",
+      "source": "https://qfl.kz/upload/teams/a6d/nsxwuvofl9ukzy9p4mmhbz23lpdto23c.svg",
+      "source_page": "https://qfl.kz/team/2/",
+      "asset_type": "club_crest",
+      "review": "Downloaded from QFL club directory and visually checked. Directory membership is not a claim of current league division.",
+      "match_note": "Require country/club context for ambiguous short names; never fuzzy-match to another country.",
+      "rights": "Third-party club mark; no open license asserted",
+      "added": "2026-10-19",
+      "verified_on": "2026-10-19",
+      "approved_for_auto_use": true
+    },
+    {
+      "id": "club:kazakhstan:kairat",
+      "kind": "club",
+      "country": "kazakhstan",
+      "names": {
+        "kk": "Қайрат",
+        "ru": "Кайрат",
+        "en": "Kairat"
+      },
+      "aliases": [
+        "Қайрат",
+        "Кайрат",
+        "Kairat",
+        "Qairat",
+        "Kairat Almaty"
+      ],
+      "file": "clubs/kazakhstan/kairat.png",
+      "sha256": "0e11531181e57a987c6bb0485a2eadc5f8d9e79af36fdd724292576cc6e85777",
+      "source": "https://qfl.kz/upload/teams/7a2/etpedinfi3u3rdn12tjp2kqnqjr2elyz.png",
+      "source_page": "https://qfl.kz/team/29/",
+      "asset_type": "club_crest",
+      "review": "Downloaded from QFL club directory and visually checked. Directory membership is not a claim of current league division.",
+      "match_note": "Exact aliases only; do not strip reserve/youth suffixes.",
+      "rights": "Third-party club mark; no open license asserted",
+      "added": "2026-10-19",
+      "verified_on": "2026-10-19",
+      "approved_for_auto_use": true
+    },
+    {
+      "id": "club:kazakhstan:kaisar",
+      "kind": "club",
+      "country": "kazakhstan",
+      "names": {
+        "kk": "Қайсар",
+        "ru": "Кайсар",
+        "en": "Kaisar"
+      },
+      "aliases": [
+        "Қайсар",
+        "Кайсар",
+        "Kaisar"
+      ],
+      "file": "clubs/kazakhstan/kaisar.png",
+      "sha256": "67d95ea8f6e3a42f14f33206fb5b247e8cfbfd5754faef19a89c78afb70c93ad",
+      "source": "https://qfl.kz/upload/teams/769/3u2e1kw6bryb1icfsmqkvy742pdekx23.svg",
+      "source_page": "https://qfl.kz/team/45/",
+      "asset_type": "club_crest",
+      "review": "Downloaded from QFL club directory and visually checked. Directory membership is not a claim of current league division.",
+      "match_note": "Exact aliases only; do not strip reserve/youth suffixes.",
+      "rights": "Third-party club mark; no open license asserted",
+      "added": "2026-10-19",
+      "verified_on": "2026-10-19",
+      "approved_for_auto_use": true
+    },
+    {
+      "id": "club:kazakhstan:kyzylzhar",
+      "kind": "club",
+      "country": "kazakhstan",
+      "names": {
+        "kk": "Қызылжар",
+        "ru": "Кызылжар",
+        "en": "Kyzylzhar"
+      },
+      "aliases": [
+        "Қызылжар",
+        "Кызылжар",
+        "Kyzylzhar",
+        "Kyzyl-Zhar",
+        "Qyzyljar"
+      ],
+      "file": "clubs/kazakhstan/kyzylzhar.png",
+      "sha256": "e345cd4291b38672b31ace27bdeff452075742d19a66bd44d0e97a5069ef3ccb",
+      "source": "https://qfl.kz/upload/teams/614/42yiczb81125pquxqryp06fjsn6x7ymh.svg",
+      "source_page": "https://qfl.kz/team/34/",
+      "asset_type": "club_crest",
+      "review": "Downloaded from QFL club directory and visually checked. Directory membership is not a claim of current league division.",
+      "match_note": "Exact aliases only; do not strip reserve/youth suffixes.",
+      "rights": "Third-party club mark; no open license asserted",
+      "added": "2026-10-19",
+      "verified_on": "2026-10-19",
+      "approved_for_auto_use": true
+    },
+    {
+      "id": "club:kazakhstan:okzhetpes",
+      "kind": "club",
+      "country": "kazakhstan",
+      "names": {
+        "kk": "Оқжетпес",
+        "ru": "Окжетпес",
+        "en": "Okzhetpes"
+      },
+      "aliases": [
+        "Оқжетпес",
+        "Окжетпес",
+        "Okzhetpes"
+      ],
+      "file": "clubs/kazakhstan/okzhetpes.png",
+      "sha256": "8d031c8f330c422dbcb3af31be35928d7d4a9d2c688eb078960b9c036b250ad8",
+      "source": "https://qfl.kz/upload/teams/43e/7238g2lx0dibu339gu2z3cv5m69ju750.png",
+      "source_page": "https://qfl.kz/team/28/",
+      "asset_type": "club_crest",
+      "review": "Downloaded from QFL club directory and visually checked. Directory membership is not a claim of current league division.",
+      "match_note": "Exact aliases only; do not strip reserve/youth suffixes.",
+      "rights": "Third-party club mark; no open license asserted",
+      "added": "2026-10-19",
+      "verified_on": "2026-10-19",
+      "approved_for_auto_use": true
+    },
+    {
+      "id": "club:kazakhstan:ulytau",
+      "kind": "club",
+      "country": "kazakhstan",
+      "names": {
+        "kk": "Ұлытау",
+        "ru": "Улытау",
+        "en": "Ulytau"
+      },
+      "aliases": [
+        "Ұлытау",
+        "Улытау",
+        "Ulytau"
+      ],
+      "file": "clubs/kazakhstan/ulytau.png",
+      "sha256": "c28807321ce53e00a279c70f327e5493bf954dc37c8e03fad188cbe68462ebde",
+      "source": "https://qfl.kz/upload/teams/66d/goq7k14tzbtrk9tx5y8g4gsuf3kph0bt.svg",
+      "source_page": "https://qfl.kz/team/217/",
+      "asset_type": "club_crest",
+      "review": "Downloaded from QFL club directory and visually checked. Directory membership is not a claim of current league division.",
+      "match_note": "Exact aliases only; do not strip reserve/youth suffixes.",
+      "rights": "Third-party club mark; no open license asserted",
+      "added": "2026-10-19",
+      "verified_on": "2026-10-19",
+      "approved_for_auto_use": true
+    },
+    {
+      "id": "club:kazakhstan:kaspiy",
+      "kind": "club",
+      "country": "kazakhstan",
+      "names": {
+        "kk": "Каспий",
+        "ru": "Каспий",
+        "en": "Kaspiy"
+      },
+      "aliases": [
+        "Каспий",
+        "Kaspiy",
+        "Caspiy",
+        "Kaspiy Aktau"
+      ],
+      "file": "clubs/kazakhstan/kaspiy.png",
+      "sha256": "907a91cf771b512a3b81b1817f651bc5f0d10ea3d168be5f2e009afbca5f96b6",
+      "source": "https://qfl.kz/upload/teams/b91/h0v5fln0pt3lihhbbu7xyj60lks41epl.svg",
+      "source_page": "https://qfl.kz/team/38/",
+      "asset_type": "club_crest",
+      "review": "Downloaded from QFL club directory and visually checked. Directory membership is not a claim of current league division.",
+      "match_note": "Exact aliases only; do not strip reserve/youth suffixes.",
+      "rights": "Third-party club mark; no open license asserted",
+      "added": "2026-10-19",
+      "verified_on": "2026-10-19",
+      "approved_for_auto_use": true
+    },
+    {
+      "id": "club:kazakhstan:ertis",
+      "kind": "club",
+      "country": "kazakhstan",
+      "names": {
+        "kk": "Ертіс",
+        "ru": "Иртыш Павлодар",
+        "en": "Ertis Pavlodar"
+      },
+      "aliases": [
+        "Ертіс",
+        "Иртыш Павлодар",
+        "Ertis Pavlodar",
+        "Ертіс Павлодар",
+        "Irtysh Pavlodar",
+        "Ertis"
+      ],
+      "file": "clubs/kazakhstan/ertis.png",
+      "sha256": "53da6a9623dc1a129b999df38dc5e68f37f3d03dbaf7d2f53843af5861685970",
+      "source": "https://qfl.kz/upload/teams/2d9/9epawny7jleez4wczlgoc3dhhz8tx2fi.png",
+      "source_page": "https://qfl.kz/team/27/",
+      "asset_type": "club_crest",
+      "review": "Downloaded from QFL club directory and visually checked. Directory membership is not a claim of current league division.",
+      "match_note": "Exact aliases only; do not strip reserve/youth suffixes.",
+      "rights": "Third-party club mark; no open license asserted",
+      "added": "2026-10-19",
+      "verified_on": "2026-10-19",
+      "approved_for_auto_use": true
+    },
+    {
+      "id": "club:kazakhstan:taraz",
+      "kind": "club",
+      "country": "kazakhstan",
+      "names": {
+        "kk": "Тараз",
+        "ru": "Тараз",
+        "en": "Taraz"
+      },
+      "aliases": [
+        "Тараз",
+        "Taraz"
+      ],
+      "file": "clubs/kazakhstan/taraz.png",
+      "sha256": "f0743c921423e2945b785fb0c5058538a7bef2d143d057c850f2eac77421dfc3",
+      "source": "https://qfl.kz/upload/teams/b79/04617yowa0968ku7vryv3wb00c2a835w.png",
+      "source_page": "https://qfl.kz/team/26/",
+      "asset_type": "club_crest",
+      "review": "Downloaded from QFL club directory and visually checked. Directory membership is not a claim of current league division.",
+      "match_note": "Exact aliases only; do not strip reserve/youth suffixes.",
+      "rights": "Third-party club mark; no open license asserted",
+      "added": "2026-10-19",
+      "verified_on": "2026-10-19",
+      "approved_for_auto_use": true
+    },
+    {
+      "id": "club:kazakhstan:akzhayik",
+      "kind": "club",
+      "country": "kazakhstan",
+      "names": {
+        "kk": "Ақжайық",
+        "ru": "Акжайык",
+        "en": "Akzhayik"
+      },
+      "aliases": [
+        "Ақжайық",
+        "Акжайык",
+        "Akzhayik",
+        "Akzhaiyk"
+      ],
+      "file": "clubs/kazakhstan/akzhayik.png",
+      "sha256": "2fe1050332bbf52fefd4ec39ffdef841eb01312ff06632ccffeedb6454c1029b",
+      "source": "https://qfl.kz/upload/teams/39e/cysdifu3ogd3pc8fubm4s7k71spb1nx8.svg",
+      "source_page": "https://qfl.kz/team/30/",
+      "asset_type": "club_crest",
+      "review": "Downloaded from QFL club directory and visually checked. Directory membership is not a claim of current league division.",
+      "match_note": "Exact aliases only; do not strip reserve/youth suffixes.",
+      "rights": "Third-party club mark; no open license asserted",
+      "added": "2026-10-19",
+      "verified_on": "2026-10-19",
+      "approved_for_auto_use": true
+    },
+    {
+      "id": "club:kazakhstan:ekibastuz",
+      "kind": "club",
+      "country": "kazakhstan",
+      "names": {
+        "kk": "Екібастұз",
+        "ru": "Экибастуз",
+        "en": "Ekibastuz"
+      },
+      "aliases": [
+        "Екібастұз",
+        "Экибастуз",
+        "Ekibastuz"
+      ],
+      "file": "clubs/kazakhstan/ekibastuz.png",
+      "sha256": "f3ce963cd72338438c26f193a6394bff888017131a35a5a2459ca9728b73f430",
+      "source": "https://qfl.kz/upload/teams/061/gchkbwol5pghw4y0pjxc9sri0z8yauz4.svg",
+      "source_page": "https://qfl.kz/team/50/",
+      "asset_type": "club_crest",
+      "review": "Downloaded from QFL club directory and visually checked. Directory membership is not a claim of current league division.",
+      "match_note": "Exact aliases only; do not strip reserve/youth suffixes.",
+      "rights": "Third-party club mark; no open license asserted",
+      "added": "2026-10-19",
+      "verified_on": "2026-10-19",
+      "approved_for_auto_use": true
     }
   ]
 }
