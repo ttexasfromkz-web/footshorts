@@ -34,6 +34,9 @@ def seconds(s):
 class App(tk.Tk):
     def __init__(self):
         super().__init__()
+        import branding
+        self.brand_icon=tk.PhotoImage(data=branding.PNG)
+        self.iconphoto(True,self.brand_icon)
         self.title('Football Shorts '+updater.local_version(BASE)+' • YouTube → Шорт')
         width=min(1180,self.winfo_screenwidth()-40);height=min(800,self.winfo_screenheight()-100)
         self.geometry(f'{width}x{height}');self.minsize(860,580)
@@ -76,7 +79,10 @@ class App(tk.Tk):
             canvas.yview_scroll(delta,'units')
         self.bind_all('<MouseWheel>',wheel)
         self.bind_all('<Button-4>',wheel);self.bind_all('<Button-5>',wheel)
-        ttk.Label(frame,text='FOOTBALL SHORTS',font=('Segoe UI',19,'bold')).pack(anchor='w')
+        brand=ttk.Frame(frame);brand.pack(fill='x')
+        self.brand_small=self.brand_icon.subsample(4)
+        ttk.Label(brand,image=self.brand_small).pack(side='left',padx=(0,8))
+        ttk.Label(brand,text='FOOTBALL SHORTS',font=('Segoe UI',19,'bold')).pack(side='left')
         ttk.Label(frame,text='Компьютерде өңдеу • Соңғы есепті тексеру • 9:16 MP4',font=('Segoe UI',10)).pack(anchor='w',pady=(0,5))
         yt=ttk.LabelFrame(frame,text='Сілтемені қойыңыз → бір батырмамен дайын MP4 + TXT',padding=6);yt.pack(fill='x',pady=(0,5))
         ttk.Entry(yt,textvariable=self.youtube).pack(side='left',fill='x',expand=True)

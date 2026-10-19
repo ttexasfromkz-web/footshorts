@@ -32,10 +32,31 @@ jobs:
             throw 'Tag and version.json must match'
           }
           python scripts/build_release.py
+      - name: Build offline EXE installer
+        shell: pwsh
+        run: |
+          $compiler = "${env:ProgramFiles(x86)}\Inno Setup 6\ISCC.exe"
+          if (!(Test-Path $compiler)) { choco install innosetup --no-progress -y }
+          python scripts/build_installer.py
+      - name: Verify installer offline, paths with spaces and bundled dependencies
+        shell: pwsh
+        run: |
+          $target = Join-Path $env:RUNNER_TEMP 'Football Shorts Installed'
+          $install = Start-Process -FilePath dist/FootballShorts-Setup.exe -ArgumentList @('/VERYSILENT','/SUPPRESSMSGBOXES','/NORESTART',('/DIR="' + $target + '"')) -PassThru -Wait
+          if ($install.ExitCode -ne 0) { throw 'Installer failed' }
+          $oldPath = $env:PATH
+          $env:PATH = "$env:SystemRoot\System32;$env:SystemRoot"
+          Push-Location $target
+          try {
+            & "$target\.runtime\python.exe" "$target\runtime_manager.py" --repair
+            if ($LASTEXITCODE -ne 0) { throw 'Bundled runtime validation failed' }
+            & "$target\.runtime\python.exe" -c "import tkinter; w=tkinter.Tk(); w.withdraw(); w.destroy(); import core,rapidocr_onnxruntime; core.run([core.ffmpeg(),'-version']); print('Installed Tk, OCR and video modules are ready')"
+            if ($LASTEXITCODE -ne 0) { throw 'Installed application imports failed' }
+          } finally { Pop-Location; $env:PATH = $oldPath }
       - name: Publish release
         shell: pwsh
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
           $version = (Get-Content version.json | ConvertFrom-Json).version
-          gh release create "v$version" dist/FootballShorts-Windows.zip dist/FootballShorts-update.zip dist/update.json --title "Football Shorts $version" --generate-notes --target "$env:GITHUB_SHA"
+          gh release create "v$version" dist/FootballShorts-Setup.exe dist/FootballShorts-Windows.zip dist/FootballShorts-update.zip dist/update.json --title "Football Shorts $version" --generate-notes --target "$env:GITHUB_SHA"

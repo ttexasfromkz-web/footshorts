@@ -161,3 +161,10 @@ Windows CI-де 64 тест өтті (Python 3.11). Жергілікті оры�
 
 
 1.9.0 checks: startup discovery after updater restart, visible check status, network error event, opt-in retention, whole-project expiration, active/unfinished/fresh/linked directory exclusion, recently touched media, measured progress and stage ETA. Windows integration and media exports remain in the release test suite.
+
+
+## 2.0.0 тексеру шегі
+
+Мақсатты тесттер: ұзақ матчта есептің тұрақтылығын растау, сирек кадрлар арасында екі голдың есебін нақтылау, тыныш аудиода расталған голды сақтау, тек дыбысты голға айналдырмау, өте ұқсас қосымша үзінділерді сүзу, қабаттасқан расталған голдарды сақтау. Runtime тесттері ескі сыртқы Python жолын қабылдамауды, бөлек жөндеу ортасын, деректер мен бұрынғы іске қосу жолын сәтсіз жөндеуде сақтауды тексереді.
+
+Windows Release workflow толық Python ортасын көшіріп, дайын EXE-ді бос папкаға, бос орындары бар жолға орнатады; жүйелік Python PATH-тан алынғанда Tk, OCR, native кітапханалар және FFmpeg тексеріледі. Нақты пайдаланушы компьютерлерінің барлық конфигурациялары мен нақты матчтардағы гол recall/precision өлшемдері бұл тексерістермен қамтылмайды.

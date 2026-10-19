@@ -145,7 +145,15 @@ def choose_clips(candidates, duration, target):
             break
         start, end = max(0, c['start']), min(duration, c['end'])
         # Keep non-overlapping footage. Do not silently repeat the same goal.
-        if any(start < x['end']+1 and end > x['start']-1 for x in chosen):
+        overlap=next((x for x in chosen if start < x['end']+1 and end > x['start']-1),None)
+        if overlap:
+            if c.get('kind')=='goal' and overlap.get('kind')=='goal':
+                lo=min(start,overlap['start']);hi=max(end,overlap['end'])
+                used=sum(x['end']-x['start'] for x in chosen)
+                if used-(overlap['end']-overlap['start'])+(hi-lo)<=target:
+                    times=sorted({*overlap.get('goal_times',[overlap.get('goal_at',overlap['start'])]),*c.get('goal_times',[c.get('goal_at',start)])})
+                    overlap.update(start=round(lo,2),end=round(hi,2),goal_times=times,goal_at=times[0],
+                                   reason=overlap.get('reason','Гол')+' / '+c.get('reason','Гол'))
             continue
         left = target-sum(x['end']-x['start'] for x in chosen)
         if left < 3:
@@ -195,9 +203,8 @@ def analyze(video, target=180, roi=(0,0,.5,.17), use_ocr=True, log=print, cancel
             cap = cv2.VideoCapture(str(video))
             try:
                 # Detailed sampling near the end helps avoid using an earlier score.
-                step = max(4, duration/180)
-                times = sorted(set(np.arange(0, duration, step).tolist()+
-                                   np.arange(max(0,duration-45),duration,2).tolist()))
+                from highlight_signals import score_sample_times
+                times=score_sample_times(duration)
                 x,y,rw,rh = roi
                 for i,t in enumerate(times):
                     if cancel and cancel.is_set():
@@ -216,6 +223,20 @@ def analyze(video, target=180, roi=(0,0,.5,.17), use_ocr=True, log=print, cancel
                     readings.append((round(t,2),score))
                     if i%12 == 0:
                         log(f'Есепті оқу: {i+1}/{len(times)} кадр')
+                from highlight_signals import refinement_times
+                extra=refinement_times(readings,duration)
+                for j,t in enumerate(extra):
+                    if cancel and cancel.is_set():raise Cancelled()
+                    cap.set(cv2.CAP_PROP_POS_MSEC,t*1000);ok,frame=cap.read();score=None
+                    if ok:
+                        h,w=frame.shape[:2]
+                        crop=frame[int(y*h):max(int(y*h)+1,int((y+rh)*h)),int(x*w):max(int(x*w)+1,int((x+rw)*w))]
+                        if crop.size:
+                            result,_=engine(cv2.resize(crop,None,fx=3,fy=3,interpolation=cv2.INTER_CUBIC))
+                            score=score_from_ocr(result)
+                    readings.append((t,score))
+                    if j%20==0:log(f'Гол маңындағы есепті нақтылау: {j+1}/{len(extra)} кадр')
+                readings.sort(key=lambda item:item[0])
             finally:
                 cap.release()
         except Cancelled:
@@ -231,6 +252,7 @@ def analyze(video, target=180, roi=(0,0,.5,.17), use_ocr=True, log=print, cancel
         if len(recent)>=2 and recent[-1] == last['score'] and recent.count(last['score'])>=2:
             final = ':'.join(map(str,last['score']))
     candidates = confirmed_goal_candidates(events)
+    energy=np.asarray([],dtype=float)
     log('@progress:analyze:0.85:Комментатор мен стадион дыбысын талдау')
     log('Комментатор мен стадион дыбысын талдау…')
     try:
@@ -244,14 +266,20 @@ def analyze(video, target=180, roi=(0,0,.5,.17), use_ocr=True, log=print, cancel
             if n:
                 energy=np.sqrt(np.mean(data[:n*8000].reshape(n,8000)**2,axis=1))
                 candidates.extend(audio_candidates(energy,duration))
-                for c in candidates:
-                    if c.get('kind')=='goal':
-                        a=max(0,int(c['start']+2));b=min(n,int(c['end']-2))
-                        if b>a:c['goal_at']=min(c['end']-1,max(c['start'],a+int(np.argmax(energy[a:b]))-1.0))
     except Cancelled:
         raise
     except Exception as e:
         warnings.append('Дыбыс талданбады: '+str(e))
+    from highlight_signals import fuse_candidates,inspect_candidates,remove_repeated_candidates
+    candidates=fuse_candidates(candidates,energy)
+    removed=0
+    try:
+        log('Дыбыс, есеп және кадр белгілерін салыстыру…')
+        candidates=inspect_candidates(video,candidates,cancel,log)
+        candidates,removed=remove_repeated_candidates(candidates)
+    except Cancelled:raise
+    except Exception as e:warnings.append('Кадрларды салыстыру орындалмады: '+str(e))
+    if removed:warnings.append(f'Өте ұқсас қайталанған сәттер алынып тасталды: {removed}.')
     # Reserve a final score card and 0.1s for container/audio rounding.
     limit=min(180.0,float(target))
     if not math.isfinite(limit) or limit<4:raise ValueError('Уақыт шегі: 4–180 секунд.')
@@ -263,7 +291,7 @@ def analyze(video, target=180, roi=(0,0,.5,.17), use_ocr=True, log=print, cancel
     warnings.append('Бұл — видеода соңғы көрінген есеп. Видео матч аяқталмай тұрып үзілген болса, финалдық есеп болмауы мүмкін.')
     log('@progress:analyze:1:Талдау аяқталды')
     return dict(video=str(Path(video).resolve()),info=info,score=final,clips=clips,
-                score_events=events,warnings=warnings,ocr_readings=readings)
+                score_events=events,warnings=warnings,ocr_readings=readings,duplicate_candidates_removed=removed)
 
 def validate_clips(clips,duration):
     if not clips:

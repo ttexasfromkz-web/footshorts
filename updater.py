@@ -231,7 +231,7 @@ def runtime_python(root,fallback=None):
     fallback=fallback or sys.executable
     try:
         path=json.loads((Path(root)/'.updates/runtime.json').read_text())['python']
-        if Path(path).is_file():return path
+        if Path(path).resolve().is_relative_to(Path(root).resolve()) and Path(path).is_file():return path
     except (OSError,ValueError,KeyError):pass
     return fallback
 
