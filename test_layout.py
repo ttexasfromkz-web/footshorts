@@ -15,9 +15,10 @@ class CompactLayoutTests(unittest.TestCase):
             Path(d,'version.json').write_text('{"version":"3.0.0"}')
             ui=app.App();window=None
             try:
-                ui.music.set('');ui.youtube_login.set('Chrome');ui.intro.set(False);ui.show_final.set(False)
+                ui.music.set('');ui.youtube_login.set('Chrome');ui.intro.set(False);ui.show_final.set(False);ui.language.set('English')
                 window=ChannelWindow(ui);window.name.set('ExampleChannel');window.values['accent_color'].set('#00ff00');window.save()
-                ui.intro.set(True);ui.show_final.set(True);window.apply();window=None
+                ui.intro.set(True);ui.show_final.set(True);ui.language.set('Қазақша');window.apply();window=None
+                self.assertEqual(ui.settings()['language'],'en')
                 self.assertFalse(ui.intro.get());self.assertFalse(ui.show_final.get())
                 self.assertEqual(ui.youtube_login.get(),'Chrome');self.assertEqual(ui.channel_style['accent_color'],'#00ff00')
             finally:
@@ -57,6 +58,10 @@ class CompactLayoutTests(unittest.TestCase):
                 self.assertEqual(ui.settings()['youtube_cookie_file'],'')
                 ui.youtube_login.set('Аккаунтсыз')
                 self.assertEqual(ui.settings()['youtube_browser'],'')
+                self.assertEqual(ui.language_combo['state'],'readonly')
+                self.assertEqual(ui.settings()['language'],'kk')
+                ui.language.set('Русский');ui.save_state();ui.language.set('English');ui.restore_state()
+                self.assertEqual(ui.settings()['language'],'ru')
                 self.assertTrue(ui.show_final.get())
                 self.assertEqual(ui.show_final_btn.master.master,ui.visual_panel)
                 ui.show_final_btn.invoke();self.assertFalse(ui.settings()['show_final'])

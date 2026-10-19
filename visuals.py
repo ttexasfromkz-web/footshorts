@@ -5,6 +5,7 @@ import os
 import random
 from PIL import Image, ImageDraw, ImageFont, ImageFilter
 from publishing import parse_match_title
+from content_language import strings
 
 
 def font(size, italic=False,path=None):
@@ -37,7 +38,8 @@ def brand_mark(im,style):
         centered(d,style['brand_name'],(x,1180,680-x,60),24,style['accent_color'],font_path=style.get('font_file') or None)
 
 
-def card(path,title,score='',label='',final=False,style=None):
+def card(path,title,score='',label='',final=False,style=None,language='kk'):
+    t=strings(language)
     from channel_templates import style as validate_style
     from functools import partial
     style=validate_style(style);put=partial(centered,font_path=style['font_file'] or None)
@@ -55,19 +57,19 @@ def card(path,title,score='',label='',final=False,style=None):
         d.rounded_rectangle((296,59,424,145),20,fill='#0d2032',outline=style['accent_color'],width=2)
         put(d,score if final else 'VS',(303,74,114,54),34,'white')
     else:
-        put(d,title or 'FOOTBALL HIGHLIGHTS',(42,70,636,64),30,style['text_color'])
+        put(d,title or t['football_highlights'].upper(),(42,70,636,64),30,style['text_color'])
     if final:
-        put(d,'СОҢҒЫ ЕСЕП' if score!='?' else 'ЕСЕП АНЫҚТАЛМАДЫ',(35,430,650,50),27,style['accent_color'])
+        put(d,t['final'] if score!='?' else t['unknown_final'],(35,430,650,50),27,style['accent_color'])
         put(d,score,(35,510,650,175),140,'white')
         d.rounded_rectangle((270,739,450,744),2,fill=style['accent_color'])
-    elif 'ҚАЙТАЛАУ' in label:
+    elif t['replay'] in label:
         d.rounded_rectangle((252,163,468,200),12,fill=(13,32,50,225),outline=style['accent_color'],width=1)
         put(d,label,(261,166,198,28),18,'#f5d795')
     brand_mark(im,style)
     im.save(path)
 
 
-def goal_frame(t):
+def goal_frame(t,language='kk'):
     """A short fire burst: coherent moving tongues, glow, sparks and gold type."""
     w,h=656,300
     fire=Image.new('RGBA',(w,h));d=ImageDraw.Draw(fire)
@@ -93,7 +95,7 @@ def goal_frame(t):
     im=Image.new('RGBA',(w,h));im.alpha_composite(fire.filter(ImageFilter.GaussianBlur(12)))
     im.alpha_composite(fire.filter(ImageFilter.GaussianBlur(1.6)))
     mask=Image.new('L',(w,h));md=ImageDraw.Draw(mask);f=font(130,True)
-    text='ГООЛ!';b=md.textbbox((0,0),text,font=f)
+    text=strings(language)['goal'];b=md.textbbox((0,0),text,font=f)
     md.text(((w-(b[2]-b[0]))/2-b[0],128-b[1]),text,font=f,fill=255)
     outline=Image.new('RGBA',(w,h),'#dba14b');outline.putalpha(mask.filter(ImageFilter.MaxFilter(15)));im.alpha_composite(outline)
     outline=Image.new('RGBA',(w,h),'#171b23');outline.putalpha(mask.filter(ImageFilter.MaxFilter(9)));im.alpha_composite(outline)
@@ -105,17 +107,18 @@ def goal_frame(t):
     return im
 
 
-def goal_sequence(folder,cancel=None):
+def goal_sequence(folder,cancel=None,language='kk'):
     folder=Path(folder);folder.mkdir(exist_ok=True)
     for i in range(66):
         if cancel and cancel.is_set():
             from core import Cancelled
             raise Cancelled()
-        goal_frame(i/30).save(folder/f'{i:03}.png')
+        goal_frame(i/30,language).save(folder/f'{i:03}.png')
     return folder/'%03d.png'
 
 
-def intro_layers(folder,title,logos,style=None):
+def intro_layers(folder,title,logos,style=None,language='kk'):
+    t=strings(language)
     from channel_templates import style as validate_style
     from functools import partial
     from PIL import ImageColor
@@ -128,16 +131,16 @@ def intro_layers(folder,title,logos,style=None):
         glow=max(0,1-abs(y-580)/650)
         d.line((0,y,720,y),fill=tuple(min(255,round(v+15*glow)) for v in bg_color)+(255,))
     for x in range(-800,1400,140):d.line((x,1280,x+600,0),fill=(211,175,101,15),width=1)
-    put(d,'МАТЧТЫҢ ҮЗДІК СӘТТЕРІ',(45,239,630,55),27,'#ead29e')
+    put(d,t['highlights'].upper(),(45,239,630,55),27,'#ead29e')
     d.rounded_rectangle((280,318,440,322),2,fill=style['accent_color'])
     d.ellipse((319,513,401,595),fill=style['accent_color'])
     d.ellipse((322,516,398,592),fill='#0c2034')
     put(d,'VS',(328,526,64,52),31,'white')
-    put(d,'FOOTBALL HIGHLIGHTS',(70,846,580,42),19,'#c9b78e')
+    put(d,t['football_highlights'].upper(),(70,846,580,42),19,'#c9b78e')
     brand_mark(bg,style)
     base=folder/'intro-base.png';bg.save(base)
     pair=parse_match_title(title)
-    names=[pair['team_a'],pair['team_b']] if pair else ['КОМАНДА 1','КОМАНДА 2']
+    names=[pair['team_a'],pair['team_b']] if pair else [t['team_a'],t['team_b']]
     paths=[]
     for index,name in enumerate(names):
         layer=Image.new('RGBA',(720,1280));ld=ImageDraw.Draw(layer)

@@ -13,7 +13,7 @@ import downloader
 import publishing
 
 DEFAULTS=dict(target=180,roi=[0,0,.5,.17],use_ocr=True,music_level=.18,
-              source_level=.2,crop_top=.15,replays=True,replay_speed=.5,action_camera=False,intro=True,show_final=True)
+              source_level=.2,crop_top=.15,replays=True,replay_speed=.5,action_camera=False,intro=True,show_final=True,language='kk')
 
 
 def stage_style(project):
@@ -86,19 +86,16 @@ def rename_project(project,title):
 def project_text(project):
     parsed=publishing.parse_match_title(project['title']);score=project.get('score') or '?'
     music=project.get('music_title') or Path(project.get('music_file','')).stem
+    from content_language import strings
+    language=project.get('settings',{}).get('language','kk');t=strings(language)
     if parsed:
-        text=publishing.youtube_text(parsed['team_a'],parsed['team_b'],score,project.get('source_url',''),music)
+        text=publishing.youtube_text(parsed['team_a'],parsed['team_b'],score,project.get('source_url',''),music,language)
     else:
-        title=project['title'];score_text=score if score!='?' else 'анықталмады'
-        text=(f'ВИДЕО АТАУЫ\n{title[:65]} ⚽ Үздік сәттер #Shorts\n\n'
-              f'СИПАТТАМА (хештегтерімен бірге)\n⚽ {title}\nЕсеп: {score_text}.\n'
-              'Матчтың іріктелген сәттерін тамашала!\nҚай сәт ұнады? Пікірге жаз!\n\n'
-              '#рекомендации #рекомендация #Футбол #Football #Highlights #Shorts\n\n'
-              'ТЕГТЕР\nфутбол, футбол шортс, football, football highlights, football shorts, shorts\n')
+        text=publishing.youtube_copy(project['title'],score,project.get('source_url',''),music,language)
     if not parsed or not project.get('score'):
-        text+='\nЖАРИЯЛАУ АЛДЫНДА ТЕКСЕРУ\n'
-        if not parsed:text+='Командалар атауы автоматты анықталмады. Матч атауын түзетіңіз.\n'
-        if not project.get('score'):text+='Есеп оқылмады. 0:0 деп болжанған жоқ. Есепті енгізіп қайта жасаңыз.\n'
+        text+='\n'+t['review']+'\n'
+        if not parsed:text+=t['unknown_teams']+'\n'
+        if not project.get('score'):text+=t['unknown_score']+'\n'
     if project.get('settings',{}).get('intro',True) and parsed:
         credits=[]
         for record in (Path(project['directory'])/'source/logos').glob('*.json'):
@@ -107,7 +104,7 @@ def project_text(project):
                 if item.get('name') in (parsed['team_a'],parsed['team_b']) and item.get('source'):
                     credits.append(' • '.join(str(item.get(k,'')) for k in ('name','artist','license','source') if item.get(k)))
             except (OSError,ValueError):continue
-        if credits:text+='\nЛОГОТИПТЕРДІҢ ДЕРЕККӨЗДЕРІ\n'+'\n'.join(credits)+'\n'
+        if credits:text+='\n'+t['logo_sources']+'\n'+'\n'.join(credits)+'\n'
     return text
 
 
@@ -174,7 +171,7 @@ def render_project(project,log=print,cancel=None):
                 music_level=settings['music_level'],source_level=settings['source_level'],
                 crop_top=settings['crop_top'],replays=settings['replays'],replay_speed=settings['replay_speed'],
                 max_seconds=settings['target'],action_camera=settings['action_camera'],intro=settings['intro'],
-                show_final=settings['show_final'],channel_style=project_style(project),logo_dir=folder/'source/logos',log=log,cancel=cancel)
+                show_final=settings['show_final'],language=settings['language'],channel_style=project_style(project),logo_dir=folder/'source/logos',log=log,cancel=cancel)
             temp_manifest=cache/'render.tmp';temp_manifest.write_text(json.dumps({'signature':signature}));os.replace(temp_manifest,manifest)
         project['checkpoint']='render';save_project(project)
         log('@progress:save:0.8:YouTube мәтіні мен видеоны сақтау')

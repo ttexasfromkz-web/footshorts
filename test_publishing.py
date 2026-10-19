@@ -17,7 +17,7 @@ class PublishingTests(unittest.TestCase):
     def test_tags_and_text(self):
         t=publishing.youtube_text('Ақтөбе','Ордабасы','1:3')
         self.assertIn('Ақтөбе — Ордабасы 1:3',t)
-        self.assertIn('#рекомендации #рекомендация',t)
+        self.assertIn('#Футбол #ҮздікСәттер #Голдар #Shorts',t)
         self.assertNotIn('Ферран',t)
         self.assertLessEqual(len(t.split('ТЕГТЕР\n')[1].strip()),500)
     def test_safe_names(self):

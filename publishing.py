@@ -41,29 +41,35 @@ def safe_name(value):
     return value
 
 
-def youtube_text(team_a,team_b,score,source_url='',music_name=''):
+def youtube_text(team_a,team_b,score,source_url='',music_name='',language='kk'):
     if not team_a.strip() or not team_b.strip():raise ValueError('Екі команданың атын енгізіңіз.')
+    return youtube_copy(f'{team_a.strip()} — {team_b.strip()}',score,source_url,music_name,language,(team_a,team_b))
+
+
+def youtube_copy(match,score,source_url='',music_name='',language='kk',teams=()):
+    from content_language import strings
+    t=strings(language)
     if score!='?' and not re.fullmatch(r'\d{1,2}:\d{1,2}',score):raise ValueError('Расталған есепті 1:3 түрінде енгізіңіз.')
-    score_text=score if score!='?' else 'анықталмады'
-    match=f'{team_a.strip()} — {team_b.strip()}'
-    title=f'{match} {score if score!="?" else ""} ⚽ Матчтың үздік сәттері! #Shorts'
-    if len(title)>100:title=f'{match[:65]} {score} ⚽ #Shorts'[:100]
-    team_hashes=['#'+re.sub(r'[^\w]','',t,flags=re.U) for t in (team_a,team_b)]
-    hashtags=' '.join(dict.fromkeys(['#рекомендации','#рекомендация',*team_hashes,'#Футбол','#Football','#Highlights','#Shorts']))
-    desc=f'⚽ {match}\n\nЕсеп: {score_text}.\nМатчтың іріктелген қызықты сәттерін тамашала!\n\nҚай сәт саған көбірек ұнады? Пікірге жаз! 👇\nФутбол үзінділері үшін арнаға жазыл!'
-    if music_name:desc+='\n\n🎵 Фондық музыка: '+music_name
-    if source_url:desc+='\nБастапқы видео: '+source_url
+    score_text=score if score!='?' else t['unknown']
+    score_suffix=' '+score if score!='?' else ''
+    title=f"{match}{score_suffix} ⚽ {t['highlights']}! #Shorts"
+    if len(title)>100:title=f'{match[:65]}{score_suffix} ⚽ #Shorts'[:100]
+    team_hashes=['#'+re.sub(r'[^\w]','',name,flags=re.U) for name in teams]
+    hashtags=' '.join(dict.fromkeys([*team_hashes,*t['hashtags']]))
+    desc=f"⚽ {match}\n\n{t['score']}: {score_text}.\n{t['watch']}\n\n{t['comment']}\n{t['subscribe']}"
+    if music_name:desc+='\n\n🎵 '+t['music']+': '+music_name
+    if source_url:desc+='\n'+t['source']+': '+source_url
     tags=[]
-    for item in [team_a,team_b,match,f'{match} {score}' if score!='?' else match,'футбол','матчтың үздік сәттері','голдар','футбол шортс','football','football highlights','football shorts','goals','shorts']:
+    for item in [*teams,match,match+score_suffix,*t['keywords']]:
         item=item.replace(',',' ').strip()
         if item not in tags and len(', '.join(tags+[item]))<=500:tags.append(item)
-    return f'ВИДЕО АТАУЫ\n{title}\n\nСИПАТТАМА (хештегтерімен бірге)\n{desc}\n\n{hashtags}\n\nТЕГТЕР\n'+', '.join(tags)+'\n'
+    return f"{t['video_title']}\n{title}\n\n{t['description']}\n{desc}\n\n{hashtags}\n\n{t['tags']}\n"+', '.join(tags)+'\n'
 
 
 def export_package(base,video,music,clips,team_a,team_b,score,source_url='',**options):
     import core
     name=safe_name(team_a+' — '+team_b)
-    text=youtube_text(team_a,team_b,score,source_url,Path(music).stem if music else '')
+    text=youtube_text(team_a,team_b,score,source_url,Path(music).stem if music else '',options.get('language','kk'))
     output=Path(base).resolve()/'output';output.mkdir(parents=True,exist_ok=True)
     # Build both files privately, then publish the complete folder in one rename.
     with tempfile.TemporaryDirectory(prefix='.export-',dir=output) as tmp:

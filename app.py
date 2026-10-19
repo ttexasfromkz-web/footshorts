@@ -50,6 +50,7 @@ class App(tk.Tk):
         self.youtube=tk.StringVar();self.quality=tk.StringVar(value='1080')
         self.youtube_login=tk.StringVar(value='Аккаунтсыз');self.youtube_cookie_file=tk.StringVar()
         self.cookie_label=tk.StringVar(value='Cookies файлы таңдалмаған')
+        self.language=tk.StringVar(value='Қазақша')
         self.intro=tk.BooleanVar(value=True)
         self.show_final=tk.BooleanVar(value=True)
         self.channel_style={}
@@ -151,6 +152,10 @@ class App(tk.Tk):
         ttk.Spinbox(r,from_=0,to=35,textvariable=self.crop,width=5).pack(side='left')
         ttk.Checkbutton(opt,text='3 секундтық кіріспе: логотиптер мен атаулар',variable=self.intro).pack(anchor='w',pady=2)
         r=ttk.Frame(opt);r.pack(fill='x',pady=2)
+        from content_language import LANGUAGES
+        ttk.Label(r,text='Материал тілі:').pack(side='left')
+        self.language_combo=ttk.Combobox(r,textvariable=self.language,values=list(LANGUAGES),state='readonly',width=10)
+        self.language_combo.pack(side='left',padx=(5,10))
         ttk.Button(r,text='1-команда логосы…',command=lambda:self.pick_logo(0)).pack(side='left')
         ttk.Button(r,text='2-команда логосы…',command=lambda:self.pick_logo(1)).pack(side='left',padx=6)
         controls=ttk.Frame(frame);controls.pack(fill='x',pady=4)
@@ -272,6 +277,8 @@ class App(tk.Tk):
             if self.youtube_cookie_file.get():self.cookie_label.set(Path(self.youtube_cookie_file.get()).name)
             self.music_volume.set(round(settings.get('music_level',.18)*100));self.source_volume.set(round(settings.get('source_level',.2)*100))
             self.crop.set(str(settings.get('crop_top',.15)*100));self.roi.set(', '.join(str(v*100) for v in settings.get('roi',[0,0,.5,.17])))
+            from content_language import label
+            self.language.set(label(settings.get('language','kk')))
             self.intro.set(settings.get('intro',True))
             self.show_final.set(settings.get('show_final',True))
             self.channel_style=settings.get('channel_style',{})
@@ -329,6 +336,7 @@ class App(tk.Tk):
         self.youtube_cookie_file.set(path);self.cookie_label.set(Path(path).name);self.youtube_login.set('Cookies файлы')
 
     def settings(self,validate_auth=True):
+        from content_language import normalize
         roi=tuple(float(x.strip())/100 for x in self.roi.get().split(','))
         if len(roi)!=4 or any(v<0 for v in roi) or roi[2]<=0 or roi[3]<=0 or roi[0]+roi[2]>1 or roi[1]+roi[3]>1:
             raise ValueError('Есеп аймағы: 0, 0, 50, 17 сияқты пайызбен жазыңыз.')
@@ -336,7 +344,7 @@ class App(tk.Tk):
         if not 0<=mv<=1 or not 0<=sv<=1 or not 0<=crop<=.35:raise ValueError('Дыбыс: 0–100%, қию: 0–35%.')
         cookie_file=self.youtube_cookie_file.get() if self.youtube_login.get()=='Cookies файлы' else ''
         if validate_auth and self.youtube_login.get()=='Cookies файлы' and not cookie_file:raise ValueError('Cookies файлын таңдаңыз.')
-        return dict(youtube_browser='chrome' if self.youtube_login.get()=='Chrome' else '',youtube_cookie_file=cookie_file,
+        return dict(language=normalize(self.language.get()),youtube_browser='chrome' if self.youtube_login.get()=='Chrome' else '',youtube_cookie_file=cookie_file,
                     target=int(self.target.get()),quality=int(self.quality.get()),roi=roi,use_ocr=self.use_ocr.get(),
                     music_level=mv,source_level=sv,crop_top=crop,replays=self.replays.get(),replay_speed=float(self.replay_speed.get()),action_camera=self.action_camera.get(),intro=self.intro.get(),show_final=self.show_final.get(),channel_style=dict(self.channel_style))
 
@@ -345,6 +353,8 @@ class App(tk.Tk):
         ChannelWindow(self)
 
     def apply_channel_settings(self,settings):
+        from content_language import label
+        self.language.set(label(settings.get('language','kk')))
         self.target.set(str(settings.get('target',180)));self.quality.set(str(settings.get('quality',1080)))
         self.roi.set(', '.join(str(v*100) for v in settings.get('roi',[0,0,.5,.17])))
         self.crop.set(str(settings.get('crop_top',.15)*100))
@@ -431,6 +441,8 @@ class App(tk.Tk):
         except Exception as e:messagebox.showerror('Қате',str(e))
 
     def project_ready(self,result):
+        from content_language import label
+        self.language.set(label(result['project'].get('settings',{}).get('language','kk')))
         p=result['project'];self.project_dir=p['directory'];self.source_url=p.get('source_url','')
         self.source_video=str(workflow.media_path(p,p['source_file']));self.video.set(self.source_video)
         self.title_text.set(p['title']);self.title_score=p.get('title_score') or ''
@@ -589,11 +601,13 @@ class App(tk.Tk):
             core.validate_clips(clips,core.metadata(self.video.get())['duration'])
             c=clips[0];video=self.video.get()
             crop=float(self.crop.get())/100;replay=self.replays.get();speed=float(self.replay_speed.get());action_camera=self.action_camera.get()
+            from content_language import normalize
+            language=normalize(self.language.get())
             title=self.title_text.get()
             fd,p=tempfile.mkstemp(prefix='football-preview-',suffix='.mp4');os.close(fd)
             def job():
                 core.render(video,None,[c],p,title=title,score='',show_final=False,crop_top=crop,
-                            replays=replay,replay_speed=speed,action_camera=action_camera,intro=False,log=self.log,cancel=self.cancel_event)
+                            replays=replay,replay_speed=speed,action_camera=action_camera,intro=False,language=language,log=self.log,cancel=self.cancel_event)
                 return p
             def opened(p):
                 if os.name=='nt':os.startfile(p)

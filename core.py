@@ -339,9 +339,9 @@ def validate_clips(clips,duration):
         raise ValueError('Жалпы ұзақтық 180 секундтан аспасын.')
     return total
 
-def make_card(path, title, score, label, final_card=False,style=None):
+def make_card(path, title, score, label, final_card=False,style=None,language='kk'):
     from visuals import card
-    card(path,title,score,label,final_card,style=style)
+    card(path,title,score,label,final_card,style=style,language=language)
 
 def make_goal_image(path):
     from visuals import goal_frame
@@ -349,7 +349,9 @@ def make_goal_image(path):
 
 
 def render(video,music,clips,output,title='',score='',music_level=.18,source_level=.20,
-           crop_top=.15,show_final=True,log=print,cancel=None,replays=True,replay_speed=.5,max_seconds=180,goal_animation=True,action_camera=False,intro=True,logo_dir=None,channel_style=None):
+           crop_top=.15,show_final=True,log=print,cancel=None,replays=True,replay_speed=.5,max_seconds=180,goal_animation=True,action_camera=False,intro=True,logo_dir=None,channel_style=None,language='kk'):
+    from content_language import strings
+    text=strings(language)
     from channel_templates import style as validate_style
     channel_style=validate_style(channel_style)
     info=metadata(video)
@@ -380,7 +382,7 @@ def render(video,music,clips,output,title='',score='',music_level=.18,source_lev
             if cancel and cancel.is_set():raise Cancelled()
             log('@progress:logos:1:Логотиптер дайын')
             log('@progress:render:0:3 секундтық кіріспе')
-            base,left,right=intro_layers(tmp,title,badges,style=channel_style)
+            base,left,right=intro_layers(tmp,title,badges,style=channel_style,language=language)
             intro_part=tmp/'intro.mp4'
             log('3 секундтық матч кіріспесі…')
             intro_filter="[0:v][1:v]overlay=x='-720*pow(1-clip(t/0.75,0,1),3)':y=0[a];[a][2:v]overlay=x='720*pow(1-clip(t/0.75,0,1),3)':y=0,fade=t=in:d=0.12,fade=t=out:st=2.8:d=0.2,setsar=1,format=yuv420p[v]"
@@ -408,7 +410,7 @@ def render(video,music,clips,output,title='',score='',music_level=.18,source_lev
             part=tmp/f'{i:03}.mp4';card=tmp/f'{i:03}.png'
             is_replay=c.get('is_replay',False)
             speed=float(c.get('speed',1));out_duration=segment_duration(c)
-            make_card(card,title,'',f'ҚАЙТАЛАУ • {speed:g}×' if is_replay else 'ҮЗДІК СӘТТЕР',style=channel_style)
+            make_card(card,title,'',f"{text['replay']} • {speed:g}×" if is_replay else text['highlights'].upper(),style=channel_style,language=language)
             use_crop=action_camera
             if action_camera and not c.get('focus_points'):
                 import camera
@@ -437,7 +439,7 @@ def render(video,music,clips,output,title='',score='',music_level=.18,source_lev
             if has_goal:
                 if fire_pattern is None:
                     from visuals import goal_sequence
-                    fire_pattern=goal_sequence(tmp/'fire',cancel)
+                    fire_pattern=goal_sequence(tmp/'fire',cancel,language=language)
                 args+=['-framerate','30','-i',fire_pattern];audio_index=3
                 g=max(0,(c['goal_at']-c['start'])/speed)
                 vf=vf.rsplit(';[carded]null[v]',1)[0]
@@ -468,7 +470,7 @@ def render(video,music,clips,output,title='',score='',music_level=.18,source_lev
         if score and show_final:
             log('Соңғы есеп кадры…')
             card=tmp/'final.png';part=tmp/'final.mp4'
-            make_card(card,title,score,'',True,style=channel_style)
+            make_card(card,title,score,'',True,style=channel_style,language=language)
             run([ffmpeg(),'-v','error','-f','lavfi','-i','color=c=0x'+channel_style['background_color'][1:]+':s=720x1280:r=30:d=3',
                  '-i',card,'-f','lavfi','-i','anullsrc=r=48000:cl=stereo','-filter_complex',
                  '[0:v][1:v]overlay=0:0,setsar=1,format=yuv420p[v]','-map','[v]','-map','2:a',

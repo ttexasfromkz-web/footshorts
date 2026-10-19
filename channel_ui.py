@@ -33,7 +33,7 @@ class ChannelWindow(tk.Toplevel):
             ttk.Label(row,text=label,width=18).pack(side='left')
             ttk.Entry(row,textvariable=self.values[key],width=12).pack(side='left')
             ttk.Button(row,text='Түсті таңдау',command=lambda k=key:self.pick_color(k)).pack(side='left',padx=6)
-        ttk.Label(frame,text='Сақтағанда негізгі терезедегі кіріспе, соңғы есеп, дыбыс, зум және уақыт шегі де қосылады.',wraplength=620).pack(anchor='w',pady=10)
+        ttk.Label(frame,text='Сақтағанда негізгі терезедегі материал тілі, кіріспе, соңғы есеп, дыбыс, зум және уақыт шегі де қосылады.',wraplength=620).pack(anchor='w',pady=10)
         row=ttk.Frame(frame);row.pack(fill='x',pady=6)
         for label,fn in [('Шаблонды сақтау',self.save),('Қолдану',self.apply),('Тізімнен өшіру',self.delete)]:
             ttk.Button(row,text=label,command=lambda f=fn:self.safe(f)).pack(side='left',padx=3)
